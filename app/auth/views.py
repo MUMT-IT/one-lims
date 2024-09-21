@@ -23,12 +23,12 @@ def login():
                 flash('The email is not registered. Please register the email.', 'danger')
                 return redirect(url_for('auth.register'))
             else:
-                if existing_user.check_password(password):
+                if existing_user.check_password(password) and existing_user.is_active:
                     login_user(existing_user)
                     flash('You have logged in.', 'success')
                     return redirect(url_for('main.index'))
                 else:
-                    flash('Wrong password.', 'danger')
+                    flash('Wrong password or your account is not active.', 'danger')
         else:
             flash(form.errors, 'danger')
     return render_template('/auth/login.html', form=form)

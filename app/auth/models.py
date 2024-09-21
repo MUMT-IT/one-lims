@@ -1,6 +1,10 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_wtf import FlaskForm
 from app import db
+
+
+user_roles = db.Table('users',
+                      db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+                      db.Column('role_id', db.Integer(), db.ForeignKey('roles.id')))
 
 
 class User(db.Model):
@@ -10,6 +14,9 @@ class User(db.Model):
     lastname = db.Column('lastname', db.String())
     license_id = db.Column('license_id', db.String())
     pwdhash = db.Column('pwdhash', db.String())
+    active = db.Column('active', db.Boolean(), default=False)
+
+    roles = db.relationship('Role', secondary=user_roles, backref=db.backref('user', lazy='dynamic'))
 
     def __init__(self, firstname, lastname, email, password, license_id):
         self.firstname = firstname
@@ -34,7 +41,7 @@ class User(db.Model):
 
     @property
     def is_active(self):
-        return True
+        return self.active
 
     @property
     def is_anonymous(self):
@@ -45,3 +52,17 @@ class User(db.Model):
 
     def is_affiliated_with(self, lab_id):
         return lab_id in [affil.lab.id for affil in self.lab_affils]
+
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    action_need = db.Column('action_need', db.String())
+    role_need = db.Column('role_need', db.String())
+    resource_id = db.Column('resource_id', db.String())
+
+    def to_tuple(self):
+        return self.role_need, self.action_need, self.resource_id
+
+    def __str__(self):
+        return u'Role {}: can {} -> resource ID {}'.format(self.role_need, self.action_need, self.resource_id)
