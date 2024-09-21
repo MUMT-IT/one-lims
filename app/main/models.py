@@ -1,5 +1,6 @@
 from app import db
 from app.auth.models import User
+from sqlalchemy_utils import EmailType
 
 
 class Laboratory(db.Model):
@@ -11,6 +12,10 @@ class Laboratory(db.Model):
     active = db.Column('active', db.Boolean(), default=True)
     creator_id = db.Column('creator_id', db.ForeignKey('user.id'))
     creator = db.relationship(User, backref=db.backref('user', lazy=True))
+    address = db.Column('address', db.Text(), info={'label': 'Address'})
+    email = db.Column('email', EmailType(), info={'label': 'Email'})
+    tel = db.Column('tel', db.String(), info={'label': 'Telephone'})
+    tax_id = db.Column('tax_id', db.String(), info={'label': 'Tax ID'})
 
     @property
     def num_pending_members(self):
