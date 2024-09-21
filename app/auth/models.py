@@ -14,7 +14,7 @@ class User(db.Model):
     lastname = db.Column('lastname', db.String())
     license_id = db.Column('license_id', db.String())
     pwdhash = db.Column('pwdhash', db.String())
-    active = db.Column('active', db.Boolean(), default=False)
+    active = db.Column('active', db.Boolean(), default=True)
 
     roles = db.relationship('Role', secondary=user_roles, backref=db.backref('user', lazy='dynamic'))
 
