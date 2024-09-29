@@ -48,18 +48,17 @@ def edit_lab(lab_id=None):
             if lab_id is None:
                 lab = Laboratory()
                 lab.creator = current_user
-                flash('Your new lab has been created.', 'success')
-            else:
-                form.populate_obj(lab)
-                flash('Your lab information has been updated.', 'success')
+            form.populate_obj(lab)
             db.session.add(lab)
             db.session.commit()
             if lab_id:
+                flash('Your new lab has been created.', 'success')
                 return redirect(url_for('lab.landing', lab_id=lab_id))
             else:
+                flash('Your lab information has been updated.', 'success')
                 return redirect(url_for('main.index'))
         else:
-            flash('Error happened.', 'danger')
+            flash(f'Error happened. {form.errors}', 'danger')
     return render_template('lab/lab_form.html', form=form)
 
 
