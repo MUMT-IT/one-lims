@@ -131,6 +131,7 @@ class LabTest(db.Model):
                                                          cascade='all, delete-orphan'))
     data_type = db.Column('data_type', db.String(), info={'label': 'Data Type',
                                                           'choices': [(c, c) for c in ['Numeric', 'Text']]})
+    price = db.Column('price', db.Numeric(), info={'label': 'Price'})
 
     def __str__(self):
         return self.name

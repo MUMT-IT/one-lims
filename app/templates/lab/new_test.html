@@ -64,6 +64,12 @@
                         </div>
                     </div>
                     <div class="field">
+                        <label class="label">{{ form.price.label }}</label>
+                        <div class="control">
+                            {{ form.price(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
                         <label class="label">{{ form.active.label }}</label>
                         <div class="control">
                             {{ form.active(class="checkbox") }}
@@ -72,10 +78,15 @@
                     <hr>
                     <div class="field is-grouped is-grouped-centered">
                         <div class="control">
-                            <button class="button is-success">Add</button>
+                            <a href="{{ request.referrer }}" class="button is-danger">Cancel</a>
                         </div>
                         <div class="control">
-                            <a href="{{ request.referrer }}" class="button is-danger">Cancel</a>
+                            <button class="button is-success">
+                                <span class="icon">
+                                    <i class="fas fa-save"></i>
+                                </span>
+                                <span>Save</span>
+                            </button>
                         </div>
                     </div>
                 </form>
