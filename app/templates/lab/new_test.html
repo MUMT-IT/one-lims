@@ -32,6 +32,12 @@
                         </div>
                     </div>
                     <div class="field">
+                        <label class="label">{{ form.unit.label }}</label>
+                        <div class="control">
+                            {{ form.unit(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
                         <label class="label">{{ form.min_value.label }}</label>
                         <div class="control">
                             {{ form.min_value(class="input") }}
@@ -78,7 +84,15 @@
                     <hr>
                     <div class="field is-grouped is-grouped-centered">
                         <div class="control">
-                            <a href="{{ request.referrer }}" class="button is-danger">Cancel</a>
+                            <a class="button is-outlined is-danger">
+                                <span class="icon">
+                                    <i class="fas fa-trash-alt"></i>
+                                </span>
+                                <span>Delete</span>
+                            </a>
+                        </div>
+                        <div class="control">
+                            <a href="{{ request.referrer }}" class="button is-light">Cancel</a>
                         </div>
                         <div class="control">
                             <button class="button is-success">

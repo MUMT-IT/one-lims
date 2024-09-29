@@ -132,9 +132,14 @@ class LabTest(db.Model):
     data_type = db.Column('data_type', db.String(), info={'label': 'Data Type',
                                                           'choices': [(c, c) for c in ['Numeric', 'Text']]})
     price = db.Column('price', db.Numeric(), info={'label': 'Price'})
+    unit = db.Column('unit', db.String(), info={'label': 'หน่วย'})
 
     def __str__(self):
         return self.name
+
+    @property
+    def reference_values(self):
+        return f'[{self.min_ref_value} - {self.max_ref_value} {self.unit}]'
 
     def to_dict(self):
         return {

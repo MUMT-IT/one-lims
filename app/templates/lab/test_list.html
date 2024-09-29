@@ -32,6 +32,7 @@
                     <th>Name</th>
                     <th>Description</th>
                     <th>Choice Set</th>
+                    <th>Unit</th>
                     <th>Min Value</th>
                     <th>Max Value</th>
                     <th>Ref. Min Value</th>
@@ -39,7 +40,7 @@
                     <th>Price</th>
                     <th>Added at</th>
                     <th>Active</th>
-                    <th colspan="2"></th>
+                    <th></th>
                     </thead>
                     <tbody>
                     {% for test in lab.tests %}
@@ -58,6 +59,7 @@
                                 </span>
                                 <span>{{ test.choice_set.id }} {{ test.choice_set }}</span>
                             </td>
+                            <td>{{ test.unit }}</td>
                             <td>{{ test.min_value }}</td>
                             <td>{{ test.max_value }}</td>
                             <td>{{ test.min_ref_value }}</td>
@@ -79,13 +81,6 @@
                                 <a href="{{ url_for('lab.edit_test', test_id=test.id, lab_id=test.lab.id) }}">
                                     <span class="icon">
                                         <i class="fas fa-pencil-alt"></i>
-                                    </span>
-                                </a>
-                            </td>
-                            <td>
-                                <a href="{{ url_for('lab.remove_quan_test', test_id=test.id, lab_id=test.lab.id) }}">
-                                    <span class="icon">
-                                        <i class="fas fa-trash-alt"></i>
                                     </span>
                                 </a>
                             </td>
