@@ -35,18 +35,29 @@ def landing(lab_id):
 
 
 @lab.route('/labs', methods=['GET', 'POST'])
+@lab.route('/labs/<int:lab_id>', methods=['GET', 'POST'])
 @login_required
-def create_lab():
-    form = LabForm()
+def edit_lab(lab_id=None):
+    if lab_id is None:
+        form = LabForm()
+    else:
+        lab = Laboratory.query.get(lab_id)
+        form = LabForm(obj=lab)
     if request.method == 'POST':
         if form.validate_on_submit():
-            lab = Laboratory()
-            form.populate_obj(lab)
-            lab.creator = current_user
+            if lab_id is None:
+                lab = Laboratory()
+                lab.creator = current_user
+                flash('Your new lab has been created.', 'success')
+            else:
+                form.populate_obj(lab)
+                flash('Your lab information has been updated.', 'success')
             db.session.add(lab)
             db.session.commit()
-            flash('Your new lab has been created.', 'success')
-            return redirect(url_for('main.index'))
+            if lab_id:
+                return redirect(url_for('lab.landing', lab_id=lab_id))
+            else:
+                return redirect(url_for('main.index'))
         else:
             flash('Error happened.', 'danger')
     return render_template('lab/lab_form.html', form=form)

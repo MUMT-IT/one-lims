@@ -7,6 +7,9 @@
             <h1 class="title">
                 {{ lab.name }}
             </h1>
+            <h1 class="subtitle">
+                {{ lab.address }}
+            </h1>
         </div>
     </div>
     </section>
@@ -70,11 +73,17 @@
                     </span>
                     Data Export
                 </a>
+                <a class="panel-block" href="{{ url_for('lab.edit_lab', lab_id=lab.id) }}">
+                    <span class="panel-icon">
+                        <i class="fas fa-pencil-alt"></i>
+                    </span>
+                    แก้ไขข้อมูลแล็บ
+                </a>
                 <a class="panel-block" href="{{ url_for('main.index') }}">
                     <span class="panel-icon">
                        <i class="fas fa-chevron-left"></i>
                     </span>
-                    ออกจากแลบ (exit lab)
+                    ออก
                 </a>
             </nav>
         </div>

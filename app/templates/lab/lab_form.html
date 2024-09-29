@@ -24,10 +24,39 @@
                                 {{ form.desc(class="textarea") }}
                             </div>
                         </div>
+                        <div class="field">
+                            <label class="label">{{ form.address.label }}</label>
+                            <div class="control">
+                                {{ form.address(class="textarea") }}
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">{{ form.email.label }}</label>
+                            <div class="control">
+                                {{ form.email(class="input") }}
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">{{ form.tel.label }}</label>
+                            <div class="control">
+                                {{ form.tel(class="input") }}
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">{{ form.tax_id.label }}</label>
+                            <div class="control">
+                                {{ form.tax_id(class="input") }}
+                            </div>
+                        </div>
                         <hr>
                         <div class="field is-grouped is-grouped-centered">
                             <div class="control">
-                                <button class="button is-success">Create</button>
+                                <button class="button is-success">
+                                    <span class="icon">
+                                        <i class="fas fa-save"></i>
+                                    </span>
+                                    <span>Save</span>
+                                </button>
                             </div>
                             <div class="control">
                                 <a href="{{ url_for('main.index') }}" class="button is-danger">Cancel</a>
