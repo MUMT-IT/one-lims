@@ -25,6 +25,28 @@
     </div>
 
     <div class="navbar-end">
+    {% if lab %}
+    <div class="navbar-item has-dropdown">
+    <a class="navbar-link">
+        {{ lab.name }}
+    </a>
+    <div class="navbar-dropdown is-boxed is-right">
+      <a class="navbar-item">
+          Staff
+      </a>
+      <a class="navbar-item">
+          Tests
+      </a>
+      <a class="navbar-item">
+          Information
+      </a>
+      <hr class="navbar-divider">
+      <div class="navbar-item">
+        Version 1.0.0
+      </div>
+    </div>
+    {% endif %}
+  </div>
       <div class="navbar-item">
         <div class="buttons">
             {% if current_user.is_authenticated %}

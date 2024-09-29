@@ -35,18 +35,29 @@ def landing(lab_id):
 
 
 @lab.route('/labs', methods=['GET', 'POST'])
+@lab.route('/labs/<int:lab_id>', methods=['GET', 'POST'])
 @login_required
-def create_lab():
-    form = LabForm()
+def edit_lab(lab_id=None):
+    if lab_id is None:
+        form = LabForm()
+    else:
+        lab = Laboratory.query.get(lab_id)
+        form = LabForm(obj=lab)
     if request.method == 'POST':
         if form.validate_on_submit():
-            lab = Laboratory()
-            form.populate_obj(lab)
-            lab.creator = current_user
+            if lab_id is None:
+                lab = Laboratory()
+                lab.creator = current_user
+                flash('Your new lab has been created.', 'success')
+            else:
+                form.populate_obj(lab)
+                flash('Your lab information has been updated.', 'success')
             db.session.add(lab)
             db.session.commit()
-            flash('Your new lab has been created.', 'success')
-            return redirect(url_for('main.index'))
+            if lab_id:
+                return redirect(url_for('lab.landing', lab_id=lab_id))
+            else:
+                return redirect(url_for('main.index'))
         else:
             flash('Error happened.', 'danger')
     return render_template('lab/lab_form.html', form=form)
@@ -235,7 +246,13 @@ def add_patient(lab_id, customer_id=None):
     if request.method == 'POST':
         if form.validate_on_submit():
             if not customer_id:
-                customer = LabCustomer()
+                customer = LabCustomer.query.filter_by(pid=form.pid.data, lab=lab).first()
+                if not customer:
+                    customer = LabCustomer()
+                else:
+                    flash('The customer already registered.', 'warning')
+                    return render_template('lab/new_customer.html', form=form, lab_id=lab_id)
+
             form.populate_obj(customer)
             customer.lab_id = lab_id
             db.session.add(customer)
@@ -254,7 +271,7 @@ def add_patient(lab_id, customer_id=None):
                 flash('New customer has been added.', 'success')
             return render_template('lab/customer_list.html', lab=lab)
         else:
-            flash('Failed to add a new customer.', 'danger')
+            flash(f'Failed to add a new customer. {form.errors}', 'danger')
     return render_template('lab/new_customer.html', form=form, lab_id=lab_id)
 
 

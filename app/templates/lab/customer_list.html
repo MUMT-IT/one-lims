@@ -16,14 +16,6 @@
                         </span>
                         <span>New Customer</span>
                     </a>
-                    <a class="button is-primary is-rounded" id="random-btn"
-                       hx-confirm="Are you sure?"
-                       hx-post="{{ url_for('lab.add_random_patients', lab_id=lab.id, n=5) }}">
-                        <span class="icon">
-                            <i class="fas fa-user-plus"></i>
-                        </span>
-                        <span>Random Customers</span>
-                    </a>
                 </div>
                     <table id="table" class="table is-fullwidth is-striped">
                         <thead>
@@ -33,6 +25,7 @@
                         <th>Last Name</th>
                         <th>Gender</th>
                         <th>Date of Birth</th>
+                        <th>Tel.</th>
                         <th>Pending Orders</th>
                         <th></th>
                         </thead>
@@ -40,16 +33,14 @@
                         {% for customer in lab.customers %}
                             <tr>
                             <td>
-                                <span class="icon">
-                                    <i class="fas fa-key"></i>
-                                </span>
-                                <span>{{ customer.id }}</span>
+                                <span>{{ customer.pid }}</span>
                             </td>
                             <td>{{ customer.title }}</td>
                             <td>{{ customer.firstname }}</td>
                             <td>{{ customer.lastname }}</td>
                             <td>{{ customer.gender }}</td>
                             <td>{{ customer.dob }}</td>
+                            <td>{{ customer.tel }}</td>
                             <td>
                                 <a href="{{ url_for('lab.show_customer_records', customer_id=customer.id) }}">
                                     <span class="tag is-warning is-rounded">
@@ -65,14 +56,6 @@
                                     </span>
                                     <span>Order</span>
                                 </a>
-                                <a class="button is-outlined is-rounded is-small is-success"
-                                   id="auto-order-{{ customer.id }}-btn"
-                                   hx-post="{{ url_for('lab.auto_add_test_order', lab_id=lab.id, customer_id=customer.id) }}">
-                                    <span class="icon">
-                                        <i class="fas fa-plus-circle"></i>
-                                    </span>
-                                    <span>Auto Order</span>
-                                </a>
                                 <a class="button is-rounded is-small is-primary"
                                     href="{{ url_for('lab.show_customer_records', customer_id=customer.id) }}">
                                     <span class="icon">
@@ -80,7 +63,7 @@
                                     </span>
                                     <span>Orders</span>
                                 </a>
-                                <a class="button is-rounded is-small is-outlined is-warning"
+                                <a class="button is-rounded is-small is-light"
                                    href="{{ url_for('lab.add_patient', lab_id=lab.id, customer_id=customer.id) }}">
                                     <span class="icon">
                                         <i class="fas fa-pencil-alt"></i>

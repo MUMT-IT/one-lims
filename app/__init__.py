@@ -4,12 +4,14 @@ from flask_admin import Admin
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_principal import Principal
 
 admin = Admin()
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
+principal = Principal()
 
 
 def create_app():
@@ -35,5 +37,6 @@ def create_app():
     migrate.init_app(app, db)
     admin.init_app(app)
     login_manager.init_app(app)
+    principal.init_app(app)
 
     return app

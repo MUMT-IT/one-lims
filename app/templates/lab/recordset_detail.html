@@ -10,19 +10,35 @@
         </div>
         <div class="columns">
             <div class="column">
-                <h1 class="title is-size-4 has-text-centered">Result Records</h1>
-                <h1 class="subtitle has-text-centered">Order ID: {{ order.id }}, By {{ order.ordered_by }}, At {{ order.ordered_at|localdatetime }}</h1>
+                <h1 class="title has-text-centered">Result Records</h1>
+                <h1 class="subtitle has-text-centered">Order ID: {{ order.id }},
+                    <span class="icon">
+                        <i class="fas fa-user"></i>
+                    </span>
+                    {{ order.ordered_by }}
+                    <span class="icon">
+                        <i class="fas fa-clock"></i>
+                    </span>
+                    {{ order.ordered_at|localdatetime }}</h1>
                 {% if order.cancelled_at %}
                     <p class="notification is-danger">This order has been cancelled at {{ order.cancelled_at|localdatetime }}</p>
                 {% endif %}
-                <div class="box">
+                <div>
+                    <article class="media notification">
+                        <div class="media-content">
+                            <div class="content">
+                                <strong>{{ order.customer }}</strong>
+                                <p>
+                                    <small>เพศ <strong>{{ order.customer.gender }}</strong> วันเดือนปีเกิด <strong>{{ order.customer.dob }}</strong></small>
+                                </p>
+                            </div>
+                        </div>
+                    </article>
                     <table class="table is-striped is-fullwidth">
                         <thead>
                         <th>Order ID</th>
                         <th>Test Name</th>
-                        <th>Record ID</th>
                         <th>Updated at</th>
-                        <th>Updated by ID</th>
                         <th>Updated by</th>
                         <th>Numeric Result</th>
                         <th>Text Result</th>
@@ -42,21 +58,9 @@
                             </td>
                             <td>{{ rec.test.name }}</td>
                             <td>
-                                <span class="icon">
-                                    <i class="fas fa-key"></i>
-                                </span>
-                                <span>{{ rec.id }}</span>
-                            </td>
-                            <td>
                                 {% if rec.updated_at %}
                                 {{ rec.updated_at|localdatetime }}
                                 {% endif %}
-                            </td>
-                            <td>
-                                <span class="icon">
-                                    <i class="fas fa-link"></i>
-                                </span>
-                                <span>{{ rec.updater_id }}</span>
                             </td>
                             <td>{{ rec.updater }}</td>
                             <td>{{ rec.num_result or '' }}</td>

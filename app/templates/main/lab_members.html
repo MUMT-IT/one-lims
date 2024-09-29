@@ -42,26 +42,32 @@
                             <td>
                                 {% if not member.approved %}
                                     <span class="icon">
-                            <i class="fas fa-user-clock has-text-danger"></i>
-                        </span>
+                                        <i class="fas fa-user-clock has-text-danger"></i>
+                                    </span>
                                 {% else %}
                                     <span class="icon">
-                            <i class="fas fa-user-check has-text-success"></i>
-                        </span>
+                                        <i class="fas fa-user-check has-text-success"></i>
+                                    </span>
                                 {% endif %}
                             </td>
-                            {% if current_user == lab.creator and not member.approved %}
-                                <td>
-                                    <a class="button is-text"
-                                       href="{{ url_for('main.approve_member', lab_id=lab.id, user_id=member.user.id) }}">
-                                        approve
-                                    </a>
-                                </td>
-                            {% endif %}
+                            <td>
+                                {% if current_user == lab.creator and not member.approved %}
+                                <a class="button is-text"
+                                   href="{{ url_for('main.approve_member', lab_id=lab.id, user_id=member.user.id) }}">
+                                    approve
+                                </a>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
+                <div class="buttons is-centered">
+                    <a class="button is-light" href="{{ url_for('lab.landing', lab_id=lab.id) }}">
+                        <span class="icon"><i class="far fa-hand-point-left"></i></span>
+                        <span>back</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

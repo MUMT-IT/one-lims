@@ -7,6 +7,9 @@
             <h1 class="title">
                 {{ lab.name }}
             </h1>
+            <h1 class="subtitle">
+                {{ lab.address }}
+            </h1>
         </div>
     </div>
     </section>
@@ -30,7 +33,7 @@
                 </p>
                 <a class="panel-block" href="{{ url_for('main.list_members', lab_id=lab.id) }}">
                     <span class="panel-icon">
-                        <i class="fas fa-vial"></i>
+                        <i class="fas fa-user-circle"></i>
                     </span>
                     รายชื่อบุคลากรในแลบ (staff)
                 </a>
@@ -48,7 +51,7 @@
                 </a>
                 <a class="panel-block" href="{{ url_for('lab.list_pending_orders', lab_id=lab.id) }}">
                     <span class="panel-icon">
-                        <i class="fas fa-vial"></i>
+                        <i class="fas fa-hourglass-start"></i>
                     </span>
                     รอผลการทดสอบ (pending orders)
                 </a>
@@ -66,15 +69,21 @@
                 </a>
                 <a class="panel-block" href="{{ url_for('lab.export_data', lab_id=lab.id) }}">
                     <span class="panel-icon">
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <i class="fas fa-file-download"></i>
                     </span>
                     Data Export
+                </a>
+                <a class="panel-block" href="{{ url_for('lab.edit_lab', lab_id=lab.id) }}">
+                    <span class="panel-icon">
+                        <i class="fas fa-pencil-alt"></i>
+                    </span>
+                    แก้ไขข้อมูลแล็บ
                 </a>
                 <a class="panel-block" href="{{ url_for('main.index') }}">
                     <span class="panel-icon">
                        <i class="fas fa-chevron-left"></i>
                     </span>
-                    ออกจากแลบ (exit lab)
+                    ออก
                 </a>
             </nav>
         </div>
