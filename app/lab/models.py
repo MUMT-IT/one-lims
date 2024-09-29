@@ -1,5 +1,6 @@
 from sqlalchemy_continuum import make_versioned
 import sqlalchemy as sa
+from wtforms.validators import Length
 
 from app import db
 from app.main.models import Laboratory
@@ -28,6 +29,9 @@ class LabCustomer(db.Model):
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('customers',
                                                          cascade='all, delete-orphan'))
+    tel = db.Column('tel', db.String(), info={'label': 'หมายเลขโทรศัพท์'})
+    pid = db.Column('pid', db.String(13), info={'label': 'หมายเลขบัตรประชาชน', 'validators': Length(min=13, max=13)})
+    address = db.Column('address', db.Text(), info={'label': 'ที่อยู่'})
 
     @property
     def fullname(self):

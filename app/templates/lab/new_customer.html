@@ -3,6 +3,7 @@
 {% block content %}
     <section class="section">
     <div class="container">
+        {% include "messages.html" %}
         <div class="columns">
             <div class="column is-one-third is-offset-4">
                 <form method="post" class="box">
@@ -41,14 +42,37 @@
                             {{ form.dob(class="input") }}
                         </div>
                     </div>
+                    <div class="field">
+                        <label class="label">{{ form.tel.label }}</label>
+                        <div class="control">
+                            {{ form.tel(class="input is-danger") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.pid.label }}</label>
+                        <div class="control">
+                            {{ form.pid(class="input is-danger") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.address.label }}</label>
+                        <div class="control">
+                            {{ form.address(class="textarea") }}
+                        </div>
+                    </div>
                     <hr>
                     <div class="field is-grouped is-grouped-centered">
                         <div class="control">
-                            <button class="button is-success is-rounded" type="submit">Add</button>
-                        </div>
-                        <div class="control">
                             <a href="{{ url_for('lab.list_patients', lab_id=lab_id) }}"
                                class="button is-rounded is-danger">Cancel</a>
+                        </div>
+                        <div class="control">
+                            <button class="button is-success is-rounded" type="submit">
+                                <span class="icon">
+                                    <i class="fas fa-save"></i>
+                                </span>
+                                <span>Save</span>
+                            </button>
                         </div>
                     </div>
                 </form>

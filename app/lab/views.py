@@ -246,7 +246,13 @@ def add_patient(lab_id, customer_id=None):
     if request.method == 'POST':
         if form.validate_on_submit():
             if not customer_id:
-                customer = LabCustomer()
+                customer = LabCustomer.query.filter_by(pid=form.pid.data, lab=lab).first()
+                if not customer:
+                    customer = LabCustomer()
+                else:
+                    flash('The customer already registered.', 'warning')
+                    return render_template('lab/new_customer.html', form=form, lab_id=lab_id)
+
             form.populate_obj(customer)
             customer.lab_id = lab_id
             db.session.add(customer)
@@ -265,7 +271,7 @@ def add_patient(lab_id, customer_id=None):
                 flash('New customer has been added.', 'success')
             return render_template('lab/customer_list.html', lab=lab)
         else:
-            flash('Failed to add a new customer.', 'danger')
+            flash(f'Failed to add a new customer. {form.errors}', 'danger')
     return render_template('lab/new_customer.html', form=form, lab_id=lab_id)
 
 
