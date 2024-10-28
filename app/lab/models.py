@@ -119,6 +119,7 @@ class LabSpecimenContainer(db.Model):
     max_volume = db.Column('max_volume', db.Numeric(), info={'label': 'Max Volume'})
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('specimen_containers'))
+    number = db.Column('number', db.Integer(), info={'label': 'Number'})
 
     def __str__(self):
         return self.container
@@ -190,6 +191,8 @@ class LabOrderCount(db.Model):
     month = db.Column('month', db.Integer(), info={'label': 'Month'})
     count = db.Column('count', db.Integer(), info={'label': 'Count'})
 
+    def increment(self):
+        self.count += 1
 
 
 class LabTestOrder(db.Model):
@@ -229,16 +232,17 @@ class LabTestOrder(db.Model):
             'approver_id': self.approver_id,
         }
 
-    def generate_code(self):
+    @classmethod
+    def generate_code(cls):
         now = datetime.now()
         order_count = LabOrderCount.query.filter_by(year=now.year, month=now.month).first()
         if not order_count:
-            order_count = LabOrderCount(year=now.year, month=now, count=1)
+            order_count = LabOrderCount(year=now.year, month=now.month, count=1)
         else:
             order_count.increment()
         db.session.add(order_count)
         db.session.commit()
-        self.code = f'{str(order_count.year)[-2:]}{order_count.month:02}{order_count.count:06}'
+        return f'{str(order_count.year)[-2:]}{order_count.month:02}{order_count.count:05}'
 
 
 class LabTestRecord(db.Model):

@@ -51,10 +51,7 @@
                         {% for rec in order.test_records %}
                             <tr>
                             <td>
-                                <span class="icon">
-                                    <i class="fas fa-link"></i>
-                                </span>
-                                <span>{{ order.id }}</span>
+                                <span>{{ order.code }}</span>
                             </td>
                             <td>{{ rec.test.name }}</td>
                             <td>
@@ -171,14 +168,21 @@
                     <span class="icon"><i class="fas fa-times"></i></span>
                     <span>Cancel</span>
                 </a>
-            <a href="{{ url_for('lab.add_test_order', order_id=order.id, customer_id=customer.id, lab_id=order.lab.id) }}"
-                    class="button is-outlined is-rounded is-link">
-                <span class="icon">
-                    <i class="fas fa-pencil-alt"></i>
-                </span>
-                <span>Edit</span>
-            </a>
+                <a href="{{ url_for('lab.add_test_order', order_id=order.id, customer_id=customer.id, lab_id=order.lab.id) }}"
+                        class="button is-outlined is-rounded is-link">
+                    <span class="icon">
+                        <i class="fas fa-pencil-alt"></i>
+                    </span>
+                    <span>Edit</span>
+                </a>
             {% endif %}
+            <a href="{{ url_for('lab.print_order_barcode', order_id=order.id) }}"
+               class="button is-outlined is-rounded is-link">
+                    <span class="icon">
+                        <i class="fas fa-barcode"></i>
+                    </span>
+                <span>Barcode</span>
+            </a>
         </div>
     </div>
 </section>

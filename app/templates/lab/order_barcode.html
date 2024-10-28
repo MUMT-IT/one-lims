@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Barcode</title>
+</head>
+<body>
+<table>
+    {% for barcode in barcodes %}
+        <tr>
+        <td>
+            {{ barcode|safe }}
+        </td>
+        </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

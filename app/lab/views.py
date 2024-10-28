@@ -1,5 +1,7 @@
 import random
-import time
+
+from barcode import EAN13
+from barcode.writer import SVGWriter
 from io import BytesIO
 
 import numpy as np
@@ -16,7 +18,7 @@ from . import lab_blueprint as lab
 from .forms import *
 from .models import *
 from app.main.models import UserLabAffil
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 TestOrder = namedtuple('TestOrder', ['order', 'ordered_at', 'type', 'approved_at'])
 
@@ -394,6 +396,7 @@ def add_test_order(lab_id, customer_id, order_id=None):
                 customer_id=customer_id,
                 ordered_at=arrow.now('Asia/Bangkok').datetime,
                 ordered_by=current_user,
+                code=LabTestOrder.generate_code(),
                 test_records=[LabTestRecord(test_id=tid) for tid in test_ids],
             )
             activity = LabActivity(
@@ -441,6 +444,31 @@ def add_test_order(lab_id, customer_id, order_id=None):
                            order=order,
                            customer_id=customer_id,
                            selected_test_ids=selected_test_ids)
+
+
+@lab.route('/orders/<int:order_id>/barcode')
+@login_required
+def print_order_barcode(order_id):
+    order = LabTestOrder.query.get(order_id)
+    containers = defaultdict(int)
+    container_counts = defaultdict(int)
+    barcodes = []
+    for record in order.test_records:
+        for sc in record.test.specimen_container_items:
+            code = f'{order.code}{sc.specimen_container.number:02}{container_counts[sc.specimen_container.container]}'
+            if containers[code] + sc.volume < sc.specimen_container.max_volume:
+                containers[code] += sc.volume
+            else:
+                container_counts[sc.specimen_container] += 1
+                code = f'{order.code}{sc.specimen_container.number:02}{container_counts[sc.specimen_container.container]}'
+                containers[code] += sc.volume
+    print(container_counts)
+    print(containers)
+    for code in containers:
+        rv = BytesIO()
+        EAN13(code, writer=SVGWriter()).write(rv)
+        barcodes.append(rv.getvalue().decode('utf-8'))
+    return render_template('lab/order_barcode.html', barcodes=barcodes, order=order)
 
 
 @lab.route('/<int:lab_id>/patients/<int:customer_id>/auto-orders', methods=['POST'])
