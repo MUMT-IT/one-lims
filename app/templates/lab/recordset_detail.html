@@ -27,10 +27,20 @@
                     <article class="media notification">
                         <div class="media-content">
                             <div class="content">
+                                <div id="physicalExamRecordModal"></div>
                                 <strong>{{ order.customer }}</strong>
                                 <p>
                                     <small>เพศ <strong>{{ order.customer.gender }}</strong> วันเดือนปีเกิด <strong>{{ order.customer.dob }}</strong></small>
                                 </p>
+                                <p>
+                                    <small>น้ำหนัก <strong>{{ order.physical_exam.weight or '-' }} กก.</strong> ส่วนสูง <strong>{{ order.physical_exam.height or '-' }} ซม.</strong></small>
+                                    <small>ความดันโลหิต <strong>{{ order.physical_exam.systolic}}/{{ order.physical_exam.distolic }} mmHg</strong> อัตราการเต้นหัวใจ <strong>{{ order.physical_exam.heartrate or '-' }} ครั้ง/นาที</strong></small>
+                                </p>
+                                <a class="button is-rounded" hx-get="{{ url_for('lab.edit_physical_exam_record', order_id=order.id) }}"
+                                    hx-target="#physicalExamRecordModal" hx-swap="innerHTML">
+                                    <span class="icon"><i class="fas fa-pencil-alt"></i></span>
+                                    <span>แก้ไข</span>
+                                </a>
                             </div>
                         </div>
                     </article>

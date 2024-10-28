@@ -94,3 +94,7 @@ class LabForm(ModelForm):
         model = Laboratory
 
 
+class LabPhysicalExamRecordForm(ModelForm):
+    class Meta:
+        model = LabPhysicalExamRecord
+        exclude = ['created_at']

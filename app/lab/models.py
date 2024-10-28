@@ -291,6 +291,19 @@ class LabTestRecord(db.Model):
         }
 
 
+class LabPhysicalExamRecord(db.Model):
+    __tablename__ = 'lab_physical_exam_records'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
+    weight = db.Column('weight', db.Numeric(), info={'label': 'Weight'})
+    height = db.Column('height', db.Numeric(), info={'label': 'Height'})
+    systolic = db.Column('systolic', db.Integer, info={'label': 'Systolic'})
+    diastolic = db.Column('diastolic', db.Integer, info={'label': 'Diastolic'})
+    heartrate = db.Column('heartrate', db.Integer, info={'label': 'Heart Rate'})
+    order_id = db.Column('order_id', db.ForeignKey('lab_test_orders.id'), nullable=False)
+    order = db.relationship('LabTestOrder', backref=db.backref('physical_exam', uselist=False))
+
+
 class LabOrderRejectRecord(db.Model):
     __tablename__ = 'lab_order_reject_records'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)

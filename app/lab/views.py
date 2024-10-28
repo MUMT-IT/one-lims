@@ -215,6 +215,31 @@ def edit_test(lab_id, test_id):
     return render_template('lab/new_test.html', form=form, lab_id=lab_id, test=test)
 
 
+@lab.route('/physical-exams/<int:order_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_physical_exam_record(order_id):
+    order = LabTestOrder.query.get(order_id)
+    form = LabPhysicalExamRecordForm(obj=order.physical_exam)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if order.physical_exam:
+                record = order.physical_exam
+            else:
+                record = LabPhysicalExamRecord()
+            form.populate_obj(record)
+            record.order = order
+            record.created_at = arrow.now('Asia/Bangkok').datetime
+            db.session.add(record)
+            db.session.commit()
+        else:
+            flash(f'An error occurred. Please contact the system: {form.errors}', 'danger')
+        resp = make_response()
+        resp.headers['HX-Refresh'] = 'true'
+        return resp
+
+    return render_template('lab/modals/physical_exam_form.html', form=form, order=order)
+
+
 @lab.route('/tests/<int:test_id>/specimens/container-items/<int:container_item_id>/edit', methods=['GET', 'DELETE', 'PUT'])
 @lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
 @login_required

@@ -1,0 +1,60 @@
+<div class="modal is-active animate__animated" id="clo-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Physical Exam Record Form</p>
+            <button type="button" id="cancelButton" class="delete" aria-label="close"></button>
+        </header>
+        <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_physical_exam_record', order_id=order.id) }}">
+            {{ form.hidden_tag() }}
+            <section class="modal-card-body">
+                <div class="field">
+                    <label class="label">{{ form.weight.label }}</label>
+                    <div class="control">
+                        {{ form.weight(class="input") }}
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">{{ form.height.label }}</label>
+                    <div class="control">
+                        {{ form.height(class="input") }}
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">{{ form.systolic.label }}</label>
+                    <div class="control">
+                        {{ form.systolic(class="input") }}
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">{{ form.diastolic.label }}</label>
+                    <div class="control">
+                        {{ form.diastolic(class="input") }}
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">{{ form.heartrate.label }}</label>
+                    <div class="control">
+                        {{ form.heartrate(class="input") }}
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="button is-light" id="cancel-btn">Cancel</button>
+                    <button class="button is-success" id="save-btn">Save</button>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+<script>
+    window.document.getElementById("cancel-btn").addEventListener("click", function (event) {
+        event.preventDefault()
+        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+    })
+    window.document.getElementById("cancelButton").addEventListener("click", function () {
+        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+    })
+    window.addEventListener('closeModal', (evt) => {
+        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+    })
+</script>
