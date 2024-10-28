@@ -7,10 +7,17 @@
                 {% include "messages.html" %}
             </div>
         </div>
+        <h1 class="title has-text-centered">Lab Test</h1>
         <div class="columns">
-            <div class="column is-one-third is-offset-4">
-                <form method="post" class="box">
+            <div class="column">
+                <form method="post">
                     {{ form.csrf_token }}
+                    <div class="field">
+                        <label class="label">{{ form.code.label }}</label>
+                        <div class="control">
+                            {{ form.code(class="input") }}
+                        </div>
+                    </div>
                     <div class="field">
                         <label class="label">{{ form.name.label }}</label>
                         <div class="control">
@@ -81,6 +88,29 @@
                             {{ form.active(class="checkbox") }}
                         </div>
                     </div>
+                    {{form.container_item.hidden_tag()}}
+                    {% if not test %}
+                    <div class="notification">
+                        <div class="field">
+                            <label class="label">{{ form.container_item.specimen_container.label }}</label>
+                            <div class="select">
+                                {{ form.container_item.specimen_container() }}
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">{{ form.container_item.volume.label }}</label>
+                            <div class="control">
+                                {{ form.container_item.volume(class="input") }}
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">{{ form.container_item.note.label }}</label>
+                            <div class="control">
+                                {{ form.container_item.note(class="textarea") }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                     <hr>
                     <div class="field is-grouped is-grouped-centered">
                         <div class="control">
@@ -105,6 +135,36 @@
                     </div>
                 </form>
             </div>
+            {% if test %}
+            <div class="column">
+                <table class="table is-fullwidth" id="specimenContainerTable">
+                    <thead>
+                        <th>Container</th>
+                        <th>Volume</th>
+                        <th>Note</th>
+                    </thead>
+                    <tbody>
+                    {% for sc in test.specimen_container_items %}
+                        <tr>
+                        <td>{{ sc.specimen_container }}</td>
+                        <td>{{ sc.volume }}</td>
+                        <td>{{ sc.note }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div id="specimenContainerModal"></div>
+                <div class="buttons">
+                    <a class="button is-info" hx-get="{{ url_for('lab.edit_specimen_container_item', test_id=test.id) }}"
+                        hx-target="#specimenContainerModal" hx-swap="innerHTML">
+                        <span class="icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </span>
+                        <span>Add</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
     </section>

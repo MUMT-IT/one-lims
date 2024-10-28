@@ -110,12 +110,25 @@ class LabResultChoiceItem(db.Model):
         return self.result
 
 
+class LabSpecimenContainer(db.Model):
+    __tablename__ = 'lab_specimen_containers'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    container = db.Column('container', db.String(), nullable=False, info={'label': 'Container'})
+    max_volume = db.Column('max_volume', db.Numeric(), info={'label': 'Max Volume'})
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
+    lab = db.relationship(Laboratory, backref=db.backref('specimen_containers'))
+
+    def __str__(self):
+        return self.container
+
+
 class LabTest(db.Model):
     __versioned__ = {}
     __tablename__ = 'lab_tests'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     name = db.Column('name', db.String(), nullable=False, info={'label': 'Name'})
     detail = db.Column('detail', db.Text(), info={'label': 'Detail'})
+    code = db.Column('code', db.String(), info={'label': 'Code'})
     # for numeric results
     min_value = db.Column('min_value', db.Numeric(), default=0.0, info={'label': 'Min value'})
     max_value = db.Column('max_value', db.Numeric(), info={'label': 'Max value'})
@@ -153,6 +166,19 @@ class LabTest(db.Model):
             'data_type': self.data_type,
             'active': self.active
         }
+
+
+class LabSpecimenContainerItem(db.Model):
+    __tablename__ = 'lab_specimen_container_items'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    lab_test_id = db.Column('lab_test_id', db.ForeignKey('lab_tests.id'))
+    lab_specimen_container_id = db.Column('lab_specimen_container_id', db.ForeignKey('lab_specimen_containers.id'))
+    volume = db.Column('volume', db.Numeric(), info={'label': 'Volume'})
+    note = db.Column('note', db.Text())
+    test = db.relationship(LabTest, backref=db.backref('specimen_container_items', cascade='all, delete-orphan'))
+    specimen_container = db.relationship(LabSpecimenContainer,
+                                         backref=db.backref('specimen_container_items', cascade='all, delete-orphan'))
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
 
 
 class LabTestOrder(db.Model):

@@ -8,7 +8,7 @@ from datetime import date
 import arrow
 import pandas as pd
 from faker import Faker
-from flask import render_template, url_for, request, flash, redirect, make_response, send_file
+from flask import render_template, url_for, request, flash, redirect, make_response, send_file, session
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
@@ -31,6 +31,7 @@ def landing(lab_id):
         flash('You do not have a permission to enter this lab.', 'danger')
         return redirect(url_for('main.index'))
     lab = Laboratory.query.get(lab_id)
+    session['lab_id'] = lab_id
     return render_template('lab/index.html', lab=lab)
 
 
@@ -208,8 +209,45 @@ def edit_test(lab_id, test_id):
             flash('Data have been saved.', 'success')
             return redirect(url_for('lab.list_tests', lab_id=lab_id))
         else:
-            flash('An error occurred. Please contact the system administrator.', 'danger')
-    return render_template('lab/new_test.html', form=form, lab_id=lab_id)
+            flash(f'An error occurred. Please contact the system administrator.{form.errors}', 'danger')
+    return render_template('lab/new_test.html', form=form, lab_id=lab_id, test=test)
+
+
+@lab.route('/tests/<int:test_id>/specimens/container-items/<int:container_item_id>/edit', methods=['GET', 'DELETE', 'PUT'])
+@lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
+@login_required
+def edit_specimen_container_item(test_id, container_item_id=None):
+    if container_item_id:
+        container_item = LabSpecimenContainerItem.query.get(container_item_id)
+        form = LabSpecimenContainerItemForm(obj=container_item)
+    else:
+        form = LabSpecimenContainerItemForm()
+
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if not container_item_id:
+                _item = LabSpecimenContainerItem()
+                form.populate_obj(_item)
+                _item.lab_id = session.get('lab_id')
+                _item.lab_test_id = test_id
+                db.session.add(_item)
+                db.session.commit()
+                template = f'''
+                <tr>
+                <td>{_item.specimen_container}</td>
+                <td>{_item.volume}</td>
+                <td>{_item.note}</td>
+                </tr>
+                '''
+                resp = make_response(template)
+                resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+                return resp
+
+    return render_template('lab/modals/specimen_container.html',
+                           form=form,
+                           test_id=test_id,
+                           container_item_id=container_item_id)
+
 
 
 @lab.route('/<int:lab_id>/quantests/<int:test_id>/remove', methods=['GET', 'POST'])

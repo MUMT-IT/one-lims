@@ -1,6 +1,8 @@
+from flask import session
 from flask_wtf import FlaskForm, Form
 from wtforms import BooleanField, StringField, TextField, DecimalField, SelectField
 from wtforms.fields import BooleanField
+from wtforms.fields.core import FormField, FieldList
 from wtforms.widgets import Select
 from wtforms.validators import InputRequired, Optional
 from wtforms_alchemy import model_form_factory, QuerySelectField
@@ -35,6 +37,16 @@ class ChoiceItemForm(FlaskForm):
     ref = BooleanField('Is this a reference value?')
 
 
+class LabSpecimenContainerItemForm(ModelForm):
+    class Meta:
+        model = LabSpecimenContainerItem
+
+    specimen_container = QuerySelectField('Container',
+                                          allow_blank=True,
+                                          blank_text='Select container',
+                                          query_factory=lambda: LabSpecimenContainer.query.filter_by(lab_id=session.get('lab_id')))
+
+
 class LabTestForm(ModelForm):
     class Meta:
         model = LabTest
@@ -45,6 +57,7 @@ class LabTestForm(ModelForm):
                                   blank_text='ไม่ใช้ชุดคำตอบ',
                                   validators=[Optional()]
                                   )
+    container_item = FormField(LabSpecimenContainerItemForm, default=LabSpecimenContainerItem())
 
 
 class LabCustomerForm(ModelForm):
@@ -79,3 +92,5 @@ class LabOrderRejectRecordForm(ModelForm):
 class LabForm(ModelForm):
     class Meta:
         model = Laboratory
+
+
