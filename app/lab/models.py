@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy_continuum import make_versioned
 import sqlalchemy as sa
 from wtforms.validators import Length
@@ -181,9 +183,19 @@ class LabSpecimenContainerItem(db.Model):
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
 
 
+class LabOrderCount(db.Model):
+    __tablename__ = 'lab_order_counts'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    year = db.Column('year', db.Integer(), info={'label': 'Year'})
+    month = db.Column('month', db.Integer(), info={'label': 'Month'})
+    count = db.Column('count', db.Integer(), info={'label': 'Count'})
+
+
+
 class LabTestOrder(db.Model):
     __tablename__ = 'lab_test_orders'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column('code', db.String(), unique=True, nullable=False)
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('test_orders',
                                                          cascade='all, delete-orphan'))
@@ -216,6 +228,17 @@ class LabTestOrder(db.Model):
             'approve_datetime': self.approved_at.strftime('%Y-%m-%d %H:%M:%S') if self.approved_at else None,
             'approver_id': self.approver_id,
         }
+
+    def generate_code(self):
+        now = datetime.now()
+        order_count = LabOrderCount.query.filter_by(year=now.year, month=now.month).first()
+        if not order_count:
+            order_count = LabOrderCount(year=now.year, month=now, count=1)
+        else:
+            order_count.increment()
+        db.session.add(order_count)
+        db.session.commit()
+        self.code = f'{str(order_count.year)[-2:]}{order_count.month:02}{order_count.count:06}'
 
 
 class LabTestRecord(db.Model):
