@@ -681,15 +681,11 @@ def show_customer_records(customer_id):
         return render_template('lab/customer_records.html', customer=customer)
 
 
-@lab.route('/customers/<int:customer_id>/orders/<int:order_id>/records')
+@lab.route('/orders/<int:order_id>/records')
 @login_required
-def show_customer_test_records(customer_id, order_id):
-    customer = LabCustomer.query.get(customer_id)
+def show_customer_test_records(order_id):
     order = LabTestOrder.query.get(order_id)
-
-    # if order.cancelled_at:
-    #     flash('The order has been cancelled.', 'danger')
-    #     return redirect(url_for('lab.show_customer_records', customer_id=customer_id))
+    customer = order.customer
     return render_template('lab/recordset_detail.html', customer=customer, order=order)
 
 

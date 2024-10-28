@@ -22,7 +22,9 @@ admin.add_view(ModelView(Laboratory, db.session, category='Labs'))
 from app.lab.models import *
 
 admin.add_view(ModelView(LabTest, db.session, category='Tests'))
+admin.add_view(ModelView(LabOrderCount, db.session, category='Tests'))
 admin.add_view(ModelView(LabTestOrder, db.session, category='Tests'))
+admin.add_view(ModelView(LabOrderPaymentRecord, db.session, category='Tests'))
 admin.add_view(ModelView(LabTestRecord, db.session, category='Tests'))
 admin.add_view(ModelView(LabResultChoiceSet, db.session, category='Tests'))
 admin.add_view(ModelView(LabResultChoiceItem, db.session, category='Tests'))
@@ -42,10 +44,12 @@ def index():
 
 
 @app.template_filter('humanizedt')
-def humanize_datetime(dt):
+def humanize_datetime(dt, only_distance=False, granularity=None):
+    if not granularity:
+        granularity = ['minute', 'hour', 'day', 'month', 'year']
     if dt:
         dt = arrow.get(dt)
-        return dt.humanize()
+        return dt.humanize(locale='th', only_distance=only_distance, granularity=granularity)
     else:
         return ''
 

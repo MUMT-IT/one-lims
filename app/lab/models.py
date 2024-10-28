@@ -155,7 +155,14 @@ class LabTest(db.Model):
 
     @property
     def reference_values(self):
-        return f'[{self.min_ref_value} - {self.max_ref_value} {self.unit}]'
+        if self.min_ref_value and self.max_ref_value:
+            return f'{self.min_ref_value} - {self.max_ref_value}'
+        elif self.min_ref_value and not self.max_ref_value:
+            return f'> {self.min_ref_value}'
+        elif self.max_ref_value and not self.min_ref_value:
+            return f'< {self.max_ref_value}'
+        else:
+            return ''
 
     def to_dict(self):
         return {
@@ -252,6 +259,10 @@ class LabTestOrder(db.Model):
     def amount_balance(self):
         return sum([rec.test.price for rec in self.test_records])
 
+    @property
+    def last_reported_record(self):
+        return self.test_records.order_by(LabTestRecord.updated_at.desc()).first()
+
 
 class LabTestRecord(db.Model):
     __versioned__ = {}
@@ -268,7 +279,7 @@ class LabTestRecord(db.Model):
     test_id = db.Column('test_id', db.ForeignKey('lab_tests.id'))
     test = db.relationship(LabTest, backref=db.backref('test_records', cascade='all, delete-orphan'))
     order_id = db.Column('order_id', db.ForeignKey('lab_test_orders.id'))
-    order = db.relationship(LabTestOrder, backref=db.backref('test_records', cascade='all, delete-orphan'))
+    order = db.relationship(LabTestOrder, backref=db.backref('test_records', lazy='dynamic', cascade='all, delete-orphan'))
     reject_record_id = db.Column('reject_record_id', db.ForeignKey('lab_order_reject_records.id'))
     reject_record = db.relationship('LabOrderRejectRecord', backref=db.backref('test_records'))
     received_at = db.Column('received_at', db.DateTime(timezone=True))
@@ -330,13 +341,13 @@ class LabPhysicalExamRecord(db.Model):
     def bmi_interpret(self):
         if self.bmi:
             if self.bmi < 18.5:
-                interpret = 'underweight'
+                interpret = 'ผอมเกิน'
             elif self.bmi < 25:
-                interpret = 'normal'
+                interpret = 'ปกติ'
             elif self.bmi < 30:
-                interpret = 'overweight'
+                interpret = 'น้ำหนักเกิน'
             else:
-                interpret = 'obese'
+                interpret = 'อ้วน'
             return interpret
 
 
