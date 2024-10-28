@@ -98,3 +98,9 @@ class LabPhysicalExamRecordForm(ModelForm):
     class Meta:
         model = LabPhysicalExamRecord
         exclude = ['created_at']
+
+
+class LabPaymentRecordForm(ModelForm):
+    class Meta:
+        model = LabOrderPaymentRecord
+        exclude = ['created_at', 'expired_at', 'payment_datetime']

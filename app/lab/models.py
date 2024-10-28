@@ -244,6 +244,14 @@ class LabTestOrder(db.Model):
         db.session.commit()
         return f'{str(order_count.year)[-2:]}{order_count.month:02}{order_count.count:05}'
 
+    @property
+    def payment(self):
+        return self.payments.filter_by(expired_at=None).first()
+
+    @property
+    def amount_balance(self):
+        return sum([rec.test.price for rec in self.test_records])
+
 
 class LabTestRecord(db.Model):
     __versioned__ = {}
@@ -290,6 +298,14 @@ class LabTestRecord(db.Model):
             'order_id': self.order_id
         }
 
+    @property
+    def interpret(self):
+        if self.test.min_ref_value and self.num_result < self.test.min_ref_value:
+            return 'LOW'
+        if self.test.max_ref_value and self.num_result < self.test.max_ref_value:
+            return 'HIGH'
+        return ''
+
 
 class LabPhysicalExamRecord(db.Model):
     __tablename__ = 'lab_physical_exam_records'
@@ -302,6 +318,26 @@ class LabPhysicalExamRecord(db.Model):
     heartrate = db.Column('heartrate', db.Integer, info={'label': 'Heart Rate'})
     order_id = db.Column('order_id', db.ForeignKey('lab_test_orders.id'), nullable=False)
     order = db.relationship('LabTestOrder', backref=db.backref('physical_exam', uselist=False))
+
+    @property
+    def bmi(self):
+        if self.weight and self.height:
+            height = self.height / 100
+            bmi = self.weight / (height ** 2)
+            return round(bmi, 1)
+
+    @property
+    def bmi_interpret(self):
+        if self.bmi:
+            if self.bmi < 18.5:
+                interpret = 'underweight'
+            elif self.bmi < 25:
+                interpret = 'normal'
+            elif self.bmi < 30:
+                interpret = 'overweight'
+            else:
+                interpret = 'obese'
+            return interpret
 
 
 class LabOrderRejectRecord(db.Model):
@@ -328,6 +364,21 @@ class LabOrderRejectRecord(db.Model):
             'reason': self.reason,
             'detail': self.detail
         }
+
+
+class LabOrderPaymentRecord(db.Model):
+    __tablename__ = 'lab_order_payment_records'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
+    creator_id = db.Column('creator_id', db.ForeignKey('user.id'))
+    expired_at = db.Column('expired_at', db.DateTime(timezone=True))
+    payment_datetime = db.Column('payment_datetime', db.DateTime(timezone=True))
+    payment_amount = db.Column('payment_amount', db.Numeric(), info={'label': 'Payment Amount'})
+    payment_method = db.Column('payment_method', db.String(), info={'label': 'Payment Method',
+                                                                    'choices': [(c, c) for c in
+                                                                                ('Cash', 'QR', 'Credit Card')]})
+    order_id = db.Column('order_id', db.Integer, db.ForeignKey('lab_test_orders.id'))
+    order = db.relationship(LabTestOrder, backref=db.backref('payments', lazy='dynamic', cascade='all, delete-orphan'))
 
 
 sa.orm.configure_mappers()

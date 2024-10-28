@@ -55,6 +55,7 @@
                         <th>Status</th>
                         <th>Approved At</th>
                         <th>Actions</th>
+                        <th>Price</th>
                         <th>Audit Trail</th>
                         </thead>
                         <tbody>
@@ -139,6 +140,9 @@
                                 {% endif %}
                             </td>
                             <td>
+                                {{ rec.test.price }}
+                            </td>
+                            <td>
                                 <a class="button is-small is-rounded is-link"
                                    href="{{ url_for('lab.test_record_revisions', record_id=rec.id) }}">
                                     <span class="icon">
@@ -150,6 +154,28 @@
                             </tr>
                         {% endfor %}
                         </tbody>
+                    </table>
+                    <table class="table">
+                    <tbody>
+                    <tr>
+                        <td><strong>Amount Balance</strong></td>
+                        <td>
+                            {{ order.amount_balance }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amount Paid</strong></td>
+                        <td>
+                            {{ order.payment.payment_amount }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Payment Date Time</strong></td>
+                        <td>
+                            {{ order.payment.payment_datetime|localdatetime }}
+                        </td>
+                    </tr>
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -193,15 +219,26 @@
                     </span>
                 <span>Barcode</span>
             </a>
+            {% if not order.payment %}
+            <a hx-get="{{ url_for('lab.edit_payment_record', order_id=order.id) }}"
+               hx-target="#paymentModal" hx-swap="innerHTML"
+               class="button is-outlined is-rounded is-link">
+                    <span class="icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </span>
+                <span>Pay</span>
+            </a>
+            <div id="paymentModal"></div>
+            {% else %}
+            <a href="{{ url_for('lab.preview_report', order_id=order.id) }}"
+               class="button is-rounded is-success">
+                <span class="icon">
+                    <i class="fas fa-print"></i>
+                </span>
+                <span>Report</span>
+            </a>
+            {% endif %}
         </div>
     </div>
 </section>
-{% endblock %}
-{% block scripts %}
-    {{ super() }}
-    <script>
-        document.addEventListener('htmx:beforeSend', function () {
-            htmx.addClass(htmx.find('#approve-btn'), 'is-loading')
-        })
-    </script>
 {% endblock %}

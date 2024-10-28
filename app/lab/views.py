@@ -817,3 +817,38 @@ def export_data(lab_id):
             return send_file(output, download_name=f'{table}.xlsx')
 
     return render_template('lab/data_export.html', lab_id=lab_id)
+
+
+@lab.route('/payments/<int:order_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_payment_record(order_id):
+    order = LabTestOrder.query.get(order_id)
+    record = order.payment
+    form = LabPaymentRecordForm(obj=record) if record else LabPaymentRecordForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if order.payment:
+                record = order.payment
+            else:
+                record = LabOrderPaymentRecord()
+            form.populate_obj(record)
+            record.created_at = arrow.now('Asia/Bangkok').datetime
+            record.payment_datetime = arrow.now('Asia/Bangkok').datetime
+            record.order = order
+            db.session.add(record)
+            db.session.commit()
+            flash('Payment record has been saved.', 'success')
+        else:
+            flash(f'An error occurred. {form.errors}', 'danger')
+
+        resp = make_response()
+        resp.headers['HX-Refresh'] = 'true'
+        return resp
+    return render_template('lab/modals/payment_form.html', form=form, order=order)
+
+
+@lab.route('/reports/<int:order_id>/preview', methods=['GET', 'POST'])
+@login_required
+def preview_report(order_id):
+    order = LabTestOrder.query.get(order_id)
+    return render_template('lab/lab_report_preview.html', order=order)
