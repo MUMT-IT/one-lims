@@ -390,6 +390,7 @@ class LabOrderPaymentRecord(db.Model):
                                                                                 ('Cash', 'QR', 'Credit Card')]})
     order_id = db.Column('order_id', db.Integer, db.ForeignKey('lab_test_orders.id'))
     order = db.relationship(LabTestOrder, backref=db.backref('payments', lazy='dynamic', cascade='all, delete-orphan'))
+    creator = db.relationship(User)
 
 
 sa.orm.configure_mappers()
