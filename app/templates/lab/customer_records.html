@@ -19,7 +19,6 @@
                             <th>Order No.</th>
                             <th>Ordered At</th>
                             <th>Tests</th>
-                            <th>Ordered By FK</th>
                             <th>Ordered By</th>
                             <th>Approved</th>
                             <th>Action</th>
@@ -28,24 +27,15 @@
                             {% for order in customer.test_orders|sort(attribute='ordered_at', reverse=True) %}
                                     <tr {% if order.cancelled_at %} class="has-text-danger" {% endif %}>
                                         <td>
-                                        <span class="icon">
-                                            <i class="fas fa-key"></i>
-                                        </span>
-                                            <span>{{ order.id }}</span>
+                                            {{ order.code }}
                                         </td>
-                                        <td>{{ order.ordered_at|humanizedt }}</td>
+                                        <td>{{ order.ordered_at|localdatetime }}</td>
                                         <td>
                                             <a href="{{ url_for('lab.show_customer_test_records', customer_id=customer.id, order_id=order.id) }}">
                                                 <span class="tag is-warning is-rounded">
-                                                    {{ order.test_records|length }}
+                                                    {{ order.test_records.all()|length }}
                                                 </span>
                                             </a>
-                                        </td>
-                                        <td>
-                                        <span class="icon">
-                                            <i class="fas fa-link"></i>
-                                        </span>
-                                            <span>{{ order.ordered_by_id }}</span>
                                         </td>
                                         <td>{{ order.ordered_by }}</td>
                                         <td>
@@ -55,7 +45,7 @@
                                                         <i class="fas fa-check"></i>
                                                     </span>
                                                     <span>
-                                                        {{ order.approved_at|humanizedt }}
+                                                        {{ order.approved_at|localdatetime }}
                                                     </span>
                                                 </span>
                                             {% endif %}
