@@ -26,7 +26,7 @@
 
     <div class="navbar-end">
     {% if lab %}
-    <div class="navbar-item has-dropdown">
+    <div class="navbar-item has-dropdown is-hoverable">
     <a class="navbar-link">
         {{ lab.name }}
     </a>
@@ -37,13 +37,13 @@
       <a class="navbar-item">
           Tests
       </a>
-      <a class="navbar-item">
+      <a class="navbar-item" href="{{ url_for('lab.edit_lab', lab_id=session['lab_id']) }}">
           Information
       </a>
       <hr class="navbar-divider">
-      <div class="navbar-item">
-        Version 1.0.0
-      </div>
+      <a class="navbar-item" href="{{ url_for('lab.landing', lab_id=lab.id) }}">
+          Main Menu
+      </a>
     </div>
     {% endif %}
   </div>
