@@ -9,7 +9,7 @@
             </div>
             <div class="columns">
                 <div class="column is-one-third is-offset-4">
-                    <h1 class="title is-size-4 has-text-centered"></h1>
+                    <h1 class="title is-size-4 has-text-centered">ข้อมูลห้องปฏิบัติการ</h1>
                     <form method="post" class="box">
                         {{ form.csrf_token }}
                         <div class="field">
@@ -51,15 +51,15 @@
                         <hr>
                         <div class="field is-grouped is-grouped-centered">
                             <div class="control">
+                                <a href="{{ url_for('lab.landing', lab_id=session['lab_id']) }}" class="button is-danger">Cancel</a>
+                            </div>
+                            <div class="control">
                                 <button class="button is-success">
                                     <span class="icon">
                                         <i class="fas fa-save"></i>
                                     </span>
                                     <span>Save</span>
                                 </button>
-                            </div>
-                            <div class="control">
-                                <a href="{{ url_for('main.index') }}" class="button is-danger">Cancel</a>
                             </div>
                         </div>
                     </form>
