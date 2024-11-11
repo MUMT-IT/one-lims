@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy_continuum import make_versioned
 import sqlalchemy as sa
 from wtforms.validators import Length
@@ -7,6 +9,30 @@ from app.main.models import Laboratory
 from app.auth.models import User
 
 make_versioned(user_cls=None)
+
+
+class LabHNCount(db.Model):
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    year = db.Column('year', db.Integer, nullable=False)
+    month = db.Column('month', db.Integer, nullable=False)
+    count = db.Column('count', db.Integer, default=0)
+
+    def increment(self):
+        if self.count < 99999:
+            self.count += 1
+        else:
+            raise ValueError('HN count cannot exceed 99999 per month.')
+
+    @classmethod
+    def get_new_hn(cls, year, month):
+        _hn = cls.query.filter_by(year=year, month=month).first()
+        if not _hn:
+            today = datetime.today()
+            _hn = cls(year=today.year, month=today.month, count=0)
+        _hn.increment()
+        db.session.add(_hn)
+        db.session.commit()
+        return f'{str(_hn.year)[-2:]}{_hn.month:02}{_hn.count:05}'
 
 
 class LabCustomer(db.Model):
@@ -32,6 +58,11 @@ class LabCustomer(db.Model):
     tel = db.Column('tel', db.String(), info={'label': 'หมายเลขโทรศัพท์'})
     pid = db.Column('pid', db.String(13), info={'label': 'หมายเลขบัตรประชาชน', 'validators': Length(min=13, max=13)})
     address = db.Column('address', db.Text(), info={'label': 'ที่อยู่'})
+    hn = db.Column('hn', db.String(), info={'label': 'HN'})
+
+    def generate_hn(self):
+        today = datetime.today()
+        self.hn = LabHNCount.get_new_hn(today.year, today.month)
 
     @property
     def fullname(self):
@@ -110,12 +141,26 @@ class LabResultChoiceItem(db.Model):
         return self.result
 
 
+class LabSpecimenContainer(db.Model):
+    __tablename__ = 'lab_specimen_containers'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    container = db.Column('container', db.String(), nullable=False, info={'label': 'Container'})
+    max_volume = db.Column('max_volume', db.Numeric(), info={'label': 'Max Volume'})
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
+    lab = db.relationship(Laboratory, backref=db.backref('specimen_containers'))
+    number = db.Column('number', db.Integer(), info={'label': 'Number'})
+
+    def __str__(self):
+        return self.container
+
+
 class LabTest(db.Model):
     __versioned__ = {}
     __tablename__ = 'lab_tests'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     name = db.Column('name', db.String(), nullable=False, info={'label': 'Name'})
     detail = db.Column('detail', db.Text(), info={'label': 'Detail'})
+    code = db.Column('code', db.String(), info={'label': 'Code'})
     # for numeric results
     min_value = db.Column('min_value', db.Numeric(), default=0.0, info={'label': 'Min value'})
     max_value = db.Column('max_value', db.Numeric(), info={'label': 'Max value'})
@@ -139,7 +184,14 @@ class LabTest(db.Model):
 
     @property
     def reference_values(self):
-        return f'[{self.min_ref_value} - {self.max_ref_value} {self.unit}]'
+        if self.min_ref_value and self.max_ref_value:
+            return f'{self.min_ref_value} - {self.max_ref_value}'
+        elif self.min_ref_value and not self.max_ref_value:
+            return f'> {self.min_ref_value}'
+        elif self.max_ref_value and not self.min_ref_value:
+            return f'< {self.max_ref_value}'
+        else:
+            return ''
 
     def to_dict(self):
         return {
@@ -155,9 +207,34 @@ class LabTest(db.Model):
         }
 
 
+class LabSpecimenContainerItem(db.Model):
+    __tablename__ = 'lab_specimen_container_items'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    lab_test_id = db.Column('lab_test_id', db.ForeignKey('lab_tests.id'))
+    lab_specimen_container_id = db.Column('lab_specimen_container_id', db.ForeignKey('lab_specimen_containers.id'))
+    volume = db.Column('volume', db.Numeric(), info={'label': 'Volume'})
+    note = db.Column('note', db.Text())
+    test = db.relationship(LabTest, backref=db.backref('specimen_container_items', cascade='all, delete-orphan'))
+    specimen_container = db.relationship(LabSpecimenContainer,
+                                         backref=db.backref('specimen_container_items', cascade='all, delete-orphan'))
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
+
+
+class LabOrderCount(db.Model):
+    __tablename__ = 'lab_order_counts'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    year = db.Column('year', db.Integer(), info={'label': 'Year'})
+    month = db.Column('month', db.Integer(), info={'label': 'Month'})
+    count = db.Column('count', db.Integer(), info={'label': 'Count'})
+
+    def increment(self):
+        self.count += 1
+
+
 class LabTestOrder(db.Model):
     __tablename__ = 'lab_test_orders'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column('code', db.String(), unique=True, nullable=False)
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('test_orders',
                                                          cascade='all, delete-orphan'))
@@ -191,6 +268,30 @@ class LabTestOrder(db.Model):
             'approver_id': self.approver_id,
         }
 
+    @classmethod
+    def generate_code(cls):
+        now = datetime.now()
+        order_count = LabOrderCount.query.filter_by(year=now.year, month=now.month).first()
+        if not order_count:
+            order_count = LabOrderCount(year=now.year, month=now.month, count=1)
+        else:
+            order_count.increment()
+        db.session.add(order_count)
+        db.session.commit()
+        return f'{str(order_count.year)[-2:]}{order_count.month:02}{order_count.count:05}'
+
+    @property
+    def payment(self):
+        return self.payments.filter_by(expired_at=None).first()
+
+    @property
+    def amount_balance(self):
+        return sum([rec.test.price for rec in self.test_records])
+
+    @property
+    def last_reported_record(self):
+        return self.test_records.order_by(LabTestRecord.updated_at.desc()).first()
+
 
 class LabTestRecord(db.Model):
     __versioned__ = {}
@@ -207,7 +308,8 @@ class LabTestRecord(db.Model):
     test_id = db.Column('test_id', db.ForeignKey('lab_tests.id'))
     test = db.relationship(LabTest, backref=db.backref('test_records', cascade='all, delete-orphan'))
     order_id = db.Column('order_id', db.ForeignKey('lab_test_orders.id'))
-    order = db.relationship(LabTestOrder, backref=db.backref('test_records', cascade='all, delete-orphan'))
+    order = db.relationship(LabTestOrder,
+                            backref=db.backref('test_records', lazy='dynamic', cascade='all, delete-orphan'))
     reject_record_id = db.Column('reject_record_id', db.ForeignKey('lab_order_reject_records.id'))
     reject_record = db.relationship('LabOrderRejectRecord', backref=db.backref('test_records'))
     received_at = db.Column('received_at', db.DateTime(timezone=True))
@@ -237,6 +339,47 @@ class LabTestRecord(db.Model):
             'order_id': self.order_id
         }
 
+    @property
+    def interpret(self):
+        if self.test.min_ref_value and self.num_result < self.test.min_ref_value:
+            return 'LOW'
+        if self.test.max_ref_value and self.num_result < self.test.max_ref_value:
+            return 'HIGH'
+        return ''
+
+
+class LabPhysicalExamRecord(db.Model):
+    __tablename__ = 'lab_physical_exam_records'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
+    weight = db.Column('weight', db.Numeric(), info={'label': 'Weight'})
+    height = db.Column('height', db.Numeric(), info={'label': 'Height'})
+    systolic = db.Column('systolic', db.Integer, info={'label': 'Systolic'})
+    diastolic = db.Column('diastolic', db.Integer, info={'label': 'Diastolic'})
+    heartrate = db.Column('heartrate', db.Integer, info={'label': 'Heart Rate'})
+    order_id = db.Column('order_id', db.ForeignKey('lab_test_orders.id'), nullable=False)
+    order = db.relationship('LabTestOrder', backref=db.backref('physical_exam', uselist=False))
+
+    @property
+    def bmi(self):
+        if self.weight and self.height:
+            height = self.height / 100
+            bmi = self.weight / (height ** 2)
+            return round(bmi, 1)
+
+    @property
+    def bmi_interpret(self):
+        if self.bmi:
+            if self.bmi < 18.5:
+                interpret = 'ผอมเกิน'
+            elif self.bmi < 25:
+                interpret = 'ปกติ'
+            elif self.bmi < 30:
+                interpret = 'น้ำหนักเกิน'
+            else:
+                interpret = 'อ้วน'
+            return interpret
+
 
 class LabOrderRejectRecord(db.Model):
     __tablename__ = 'lab_order_reject_records'
@@ -262,6 +405,21 @@ class LabOrderRejectRecord(db.Model):
             'reason': self.reason,
             'detail': self.detail
         }
+
+
+class LabOrderPaymentRecord(db.Model):
+    __tablename__ = 'lab_order_payment_records'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
+    creator_id = db.Column('creator_id', db.ForeignKey('user.id'))
+    expired_at = db.Column('expired_at', db.DateTime(timezone=True))
+    payment_datetime = db.Column('payment_datetime', db.DateTime(timezone=True))
+    payment_amount = db.Column('payment_amount', db.Numeric(), info={'label': 'Payment Amount'})
+    payment_method = db.Column('payment_method', db.String(), info={'label': 'Payment Method',
+                                                                    'choices': [(c, c) for c in
+                                                                                ('Cash', 'QR', 'Credit Card')]})
+    order_id = db.Column('order_id', db.Integer, db.ForeignKey('lab_test_orders.id'))
+    order = db.relationship(LabTestOrder, backref=db.backref('payments', lazy='dynamic', cascade='all, delete-orphan'))
 
 
 sa.orm.configure_mappers()

@@ -11,11 +11,7 @@
         <div class="columns">
             <div class="column">
                 <h1 class="title has-text-centered">Result Records</h1>
-                <h1 class="subtitle has-text-centered">Order ID: {{ order.id }},
-                    <span class="icon">
-                        <i class="fas fa-user"></i>
-                    </span>
-                    {{ order.ordered_by }}
+                <h1 class="subtitle has-text-centered">Order ID: {{ order.code }},
                     <span class="icon">
                         <i class="fas fa-clock"></i>
                     </span>
@@ -27,10 +23,24 @@
                     <article class="media notification">
                         <div class="media-content">
                             <div class="content">
+                                <div id="physicalExamRecordModal"></div>
+                                <div class="tags has-addons">
+                                    <span class="tag is-rounded is-dark">HN</span>
+                                    <span class="tag is-rounded is-medium is-success"><strong>{{ order.customer.hn }}</strong></span>
+                                </div>
                                 <strong>{{ order.customer }}</strong>
                                 <p>
                                     <small>เพศ <strong>{{ order.customer.gender }}</strong> วันเดือนปีเกิด <strong>{{ order.customer.dob }}</strong></small>
                                 </p>
+                                <p>
+                                    <small>น้ำหนัก <strong>{{ order.physical_exam.weight or '-' }} กก.</strong> ส่วนสูง <strong>{{ order.physical_exam.height or '-' }} ซม.</strong></small>
+                                    <small>ความดันโลหิต <strong>{{ order.physical_exam.systolic}}/{{ order.physical_exam.distolic }} mmHg</strong> อัตราการเต้นหัวใจ <strong>{{ order.physical_exam.heartrate or '-' }} ครั้ง/นาที</strong></small>
+                                </p>
+                                <a class="button is-rounded" hx-get="{{ url_for('lab.edit_physical_exam_record', order_id=order.id) }}"
+                                    hx-target="#physicalExamRecordModal" hx-swap="innerHTML">
+                                    <span class="icon"><i class="fas fa-pencil-alt"></i></span>
+                                    <span>แก้ไข</span>
+                                </a>
                             </div>
                         </div>
                     </article>
@@ -45,16 +55,14 @@
                         <th>Status</th>
                         <th>Approved At</th>
                         <th>Actions</th>
+                        <th>Price</th>
                         <th>Audit Trail</th>
                         </thead>
                         <tbody>
                         {% for rec in order.test_records %}
                             <tr>
                             <td>
-                                <span class="icon">
-                                    <i class="fas fa-link"></i>
-                                </span>
-                                <span>{{ order.id }}</span>
+                                <span>{{ order.code }}</span>
                             </td>
                             <td>{{ rec.test.name }}</td>
                             <td>
@@ -132,6 +140,9 @@
                                 {% endif %}
                             </td>
                             <td>
+                                {{ rec.test.price }}
+                            </td>
+                            <td>
                                 <a class="button is-small is-rounded is-link"
                                    href="{{ url_for('lab.test_record_revisions', record_id=rec.id) }}">
                                     <span class="icon">
@@ -143,6 +154,28 @@
                             </tr>
                         {% endfor %}
                         </tbody>
+                    </table>
+                    <table class="table">
+                    <tbody>
+                    <tr>
+                        <td><strong>Amount Balance</strong></td>
+                        <td>
+                            {{ order.amount_balance }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amount Paid</strong></td>
+                        <td>
+                            {{ order.payment.payment_amount }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Payment Date Time</strong></td>
+                        <td>
+                            {{ order.payment.payment_datetime|localdatetime }}
+                        </td>
+                    </tr>
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -171,23 +204,41 @@
                     <span class="icon"><i class="fas fa-times"></i></span>
                     <span>Cancel</span>
                 </a>
-            <a href="{{ url_for('lab.add_test_order', order_id=order.id, customer_id=customer.id, lab_id=order.lab.id) }}"
-                    class="button is-outlined is-rounded is-link">
+                <a href="{{ url_for('lab.add_test_order', order_id=order.id, customer_id=customer.id, lab_id=order.lab.id) }}"
+                        class="button is-outlined is-rounded is-link">
+                    <span class="icon">
+                        <i class="fas fa-pencil-alt"></i>
+                    </span>
+                    <span>Edit</span>
+                </a>
+            {% endif %}
+            <a href="{{ url_for('lab.print_order_barcode', order_id=order.id) }}"
+               class="button is-outlined is-rounded is-link">
+                    <span class="icon">
+                        <i class="fas fa-barcode"></i>
+                    </span>
+                <span>Barcode</span>
+            </a>
+            {% if not order.payment %}
+            <a hx-get="{{ url_for('lab.edit_payment_record', order_id=order.id) }}"
+               hx-target="#paymentModal" hx-swap="innerHTML"
+               class="button is-outlined is-rounded is-link">
+                    <span class="icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </span>
+                <span>Pay</span>
+            </a>
+            <div id="paymentModal"></div>
+            {% else %}
+            <a href="{{ url_for('lab.preview_report', order_id=order.id) }}"
+               class="button is-rounded is-success">
                 <span class="icon">
-                    <i class="fas fa-pencil-alt"></i>
+                    <i class="fas fa-eye"></i>
                 </span>
-                <span>Edit</span>
+                <span>Report</span>
             </a>
             {% endif %}
         </div>
     </div>
 </section>
-{% endblock %}
-{% block scripts %}
-    {{ super() }}
-    <script>
-        document.addEventListener('htmx:beforeSend', function () {
-            htmx.addClass(htmx.find('#approve-btn'), 'is-loading')
-        })
-    </script>
 {% endblock %}

@@ -22,10 +22,14 @@ admin.add_view(ModelView(Laboratory, db.session, category='Labs'))
 from app.lab.models import *
 
 admin.add_view(ModelView(LabTest, db.session, category='Tests'))
+admin.add_view(ModelView(LabOrderCount, db.session, category='Tests'))
 admin.add_view(ModelView(LabTestOrder, db.session, category='Tests'))
+admin.add_view(ModelView(LabOrderPaymentRecord, db.session, category='Tests'))
 admin.add_view(ModelView(LabTestRecord, db.session, category='Tests'))
 admin.add_view(ModelView(LabResultChoiceSet, db.session, category='Tests'))
 admin.add_view(ModelView(LabResultChoiceItem, db.session, category='Tests'))
+admin.add_view(ModelView(LabSpecimenContainer, db.session, category='Tests'))
+admin.add_view(ModelView(LabSpecimenContainerItem, db.session, category='Tests'))
 admin.add_view(ModelView(LabActivity, db.session, category='Activities'))
 admin.add_view(ModelView(LabCustomer, db.session, category='Customers'))
 admin.add_view(ModelView(Announcement, db.session, category='Announcement'))
@@ -40,18 +44,20 @@ def index():
 
 
 @app.template_filter('humanizedt')
-def humanize_datetime(dt):
+def humanize_datetime(dt, only_distance=False, granularity=None):
+    if not granularity:
+        granularity = ['minute', 'hour', 'day', 'month', 'year']
     if dt:
         dt = arrow.get(dt)
-        return dt.humanize()
+        return dt.humanize(locale='th', only_distance=only_distance, granularity=granularity)
     else:
         return ''
 
 
 @app.template_filter("localdatetime")
-def local_datetime(dt):
+def local_datetime(dt, dateonly=False):
     bangkok = timezone('Asia/Bangkok')
-    datetime_format = '%d/%m/%Y %X'
+    datetime_format = '%d/%m/%y' if dateonly else '%d/%m/%Y %X'
     if dt:
         if dt.tzinfo:
             return dt.astimezone(bangkok).strftime(datetime_format)

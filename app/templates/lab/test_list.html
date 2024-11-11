@@ -28,7 +28,7 @@
                 </div>
                 <table class="table is-striped">
                     <thead>
-                    <th>Primary Key</th>
+                    <th>Code</th>
                     <th>Name</th>
                     <th>Description</th>
                     <th>Choice Set</th>
@@ -46,10 +46,7 @@
                     {% for test in lab.tests %}
                         <tr>
                             <td>
-                                <span class="icon">
-                                    <i class="fas fa-key"></i>
-                                </span>
-                                <span>{{ test.id }}</span>
+                                {{ test.code }}
                             </td>
                             <td>{{ test.name }}</td>
                             <td>{{ test.detail }}</td>

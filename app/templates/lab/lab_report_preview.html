@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="section">
+    <div class="container">
+        <h1 class="title has-text-centered">Lab Report</h1>
+        <div class="tags has-addons">
+            <span class="tag is-rounded is-dark is-medium">Order ID</span>
+            <span class="tag is-rounded is-success is-medium">{{ order.code }}</span>
+        </div>
+        <table class="table is-fullwidth">
+            <tr>
+                <td><strong>HN</strong></td>
+                <td colspan="8"><strong>{{ order.customer.hn }}</strong></td>
+            </tr>
+            <tr>
+                <td><strong>ชื่อ นามสกุล</strong></td>
+                <td>{{ order.customer.fullname }}</td>
+                <td><strong>วันเดือนปีเกิด</strong></td>
+                <td>{{ order.customer.dob }}</td>
+                <td><strong>อายุ</strong></td>
+                <td>{{ order.customer.dob|humanizedt(only_distance=True, granularity=['year', 'month', 'day']) }}</td>
+                <td><strong>เพศ</strong></td>
+                <td>{{ order.customer.gender }}</td>
+            </tr>
+            <tr>
+                <td><strong>น้ำหนัก</strong></td>
+                <td>{{ order.physical_exam.weight }} กก.</td>
+                <td><strong>ส่วนสูง</strong></td>
+                <td>{{ order.physical_exam.height }} ซม.</td>
+                <td><strong>ดัชนีมวลกาย</strong></td>
+                <td>{{ order.physical_exam.bmi }} ({{ order.physical_exam.bmi_interpret }})</td>
+                <td><strong>อัตราการเต้นหัวใจ</strong></td>
+                <td>{{ order.physical_exam.heartrate }} ครั้ง/นาที</td>
+            </tr>
+        </table>
+        <table class="table is-striped is-fullwidth is-bordered">
+            <thead>
+            <th>ชื่อการทดสอบ</th>
+            <th>ผลการทดสอบ</th>
+            <th>หน่วย</th>
+            <th>ค่าอ้างอิง</th>
+            <th>การแปลผล/หมายเหตุ</th>
+            </thead>
+            <tbody>
+            {% for rec in order.test_records %}
+                <tr>
+                    <td>{{ rec.test.name }}</td>
+                    <td>{{ rec.num_result or rec.text_result }}</td>
+                    <td>{{ rec.test.unit }}</td>
+                    <td>{{ rec.test.reference_values }}</td>
+                    <td>{{ rec.interpret }}{{ rec.comment }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <table class="table">
+            <tr>
+                <td>
+                    Reported By
+                </td>
+                <td>
+                    {{ order.last_reported_record.updater }}
+                </td>
+                <td>
+                    License ID {{ order.last_reported_record.updater.license_id }}
+                </td>
+            </tr>
+            <tr>
+                <td>Report Date Time</td>
+                <td colspan="2">{{ order.last_reported_record.updated_at|localdatetime }}</td>
+            </tr>
+            <tr>
+                <td>
+                    Approved By
+                </td>
+                <td>
+                    {{ order.approver }}
+                </td>
+                <td>
+                    License ID {{ order.approver.license_id }}
+                </td>
+            </tr>
+            <tr>
+                <td>Approve Date Time</td>
+                <td colspan="2">{{ order.approved_at|localdatetime }}</td>
+            </tr>
+        </table>
+    <div class="buttons is-centered">
+        <a class="button is-rounded is-light" href="{{ url_for('lab.show_customer_test_records', order_id=order.id) }}">
+            <span class="icon"><i class="fas fa-chevron-left"></i></span>
+            <span>Back</span>
+        </a>
+        <a href="{{ url_for('lab.preview_report', order_id=order.id) }}"
+           class="button is-rounded is-success">
+                <span class="icon">
+                    <i class="fas fa-print"></i>
+                </span>
+            <span>Report</span>
+        </a>
+    </div>
+    </div>
+</div>
+{% endblock %}

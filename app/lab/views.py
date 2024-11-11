@@ -1,5 +1,7 @@
 import random
-import time
+
+from barcode import EAN13
+from barcode.writer import SVGWriter
 from io import BytesIO
 
 import numpy as np
@@ -8,7 +10,7 @@ from datetime import date
 import arrow
 import pandas as pd
 from faker import Faker
-from flask import render_template, url_for, request, flash, redirect, make_response, send_file
+from flask import render_template, url_for, request, flash, redirect, make_response, send_file, session
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
@@ -16,7 +18,7 @@ from . import lab_blueprint as lab
 from .forms import *
 from .models import *
 from app.main.models import UserLabAffil
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 TestOrder = namedtuple('TestOrder', ['order', 'ordered_at', 'type', 'approved_at'])
 
@@ -31,6 +33,7 @@ def landing(lab_id):
         flash('You do not have a permission to enter this lab.', 'danger')
         return redirect(url_for('main.index'))
     lab = Laboratory.query.get(lab_id)
+    session['lab_id'] = lab_id
     return render_template('lab/index.html', lab=lab)
 
 
@@ -208,8 +211,70 @@ def edit_test(lab_id, test_id):
             flash('Data have been saved.', 'success')
             return redirect(url_for('lab.list_tests', lab_id=lab_id))
         else:
-            flash('An error occurred. Please contact the system administrator.', 'danger')
-    return render_template('lab/new_test.html', form=form, lab_id=lab_id)
+            flash(f'An error occurred. Please contact the system administrator.{form.errors}', 'danger')
+    return render_template('lab/new_test.html', form=form, lab_id=lab_id, test=test)
+
+
+@lab.route('/physical-exams/<int:order_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_physical_exam_record(order_id):
+    order = LabTestOrder.query.get(order_id)
+    form = LabPhysicalExamRecordForm(obj=order.physical_exam)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if order.physical_exam:
+                record = order.physical_exam
+            else:
+                record = LabPhysicalExamRecord()
+            form.populate_obj(record)
+            record.order = order
+            record.created_at = arrow.now('Asia/Bangkok').datetime
+            db.session.add(record)
+            db.session.commit()
+        else:
+            flash(f'An error occurred. Please contact the system: {form.errors}', 'danger')
+        resp = make_response()
+        resp.headers['HX-Refresh'] = 'true'
+        return resp
+
+    return render_template('lab/modals/physical_exam_form.html', form=form, order=order)
+
+
+@lab.route('/tests/<int:test_id>/specimens/container-items/<int:container_item_id>/edit', methods=['GET', 'DELETE', 'PUT'])
+@lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
+@login_required
+def edit_specimen_container_item(test_id, container_item_id=None):
+    if container_item_id:
+        container_item = LabSpecimenContainerItem.query.get(container_item_id)
+        form = LabSpecimenContainerItemForm(obj=container_item)
+    else:
+        form = LabSpecimenContainerItemForm()
+
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if not container_item_id:
+                _item = LabSpecimenContainerItem()
+                form.populate_obj(_item)
+                _item.lab_id = session.get('lab_id')
+                _item.lab_test_id = test_id
+                db.session.add(_item)
+                db.session.commit()
+                template = f'''
+                <tr>
+                <td>{_item.specimen_container}</td>
+                <td>{_item.volume}</td>
+                <td>{_item.note}</td>
+                </tr>
+                '''
+                resp = make_response(template)
+                resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+                return resp
+
+    return render_template('lab/modals/specimen_container.html',
+                           form=form,
+                           test_id=test_id,
+                           container_item_id=container_item_id)
+
 
 
 @lab.route('/<int:lab_id>/quantests/<int:test_id>/remove', methods=['GET', 'POST'])
@@ -236,15 +301,17 @@ def list_patients(lab_id):
 @lab.route('/<int:lab_id>/patients/<int:customer_id>', methods=['GET', 'POST'])
 @login_required
 def add_patient(lab_id, customer_id=None):
+    # TODO: use Ajax for datatable.
     if customer_id:
         customer = LabCustomer.query.get(customer_id)
         form = LabCustomerForm(obj=customer)
     else:
+        customer = None
         form = LabCustomerForm()
     lab = Laboratory.query.get(lab_id)
     if request.method == 'POST':
         if form.validate_on_submit():
-            if not customer_id:
+            if not customer:
                 customer = LabCustomer.query.filter_by(pid=form.pid.data, lab=lab).first()
                 if not customer:
                     customer = LabCustomer()
@@ -254,15 +321,8 @@ def add_patient(lab_id, customer_id=None):
 
             form.populate_obj(customer)
             customer.lab_id = lab_id
+            customer.generate_hn()
             db.session.add(customer)
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added a new patient',
-                detail=customer.fullname,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
             db.session.commit()
             if customer_id:
                 flash('Customer info has been updated.', 'success')
@@ -356,6 +416,7 @@ def add_test_order(lab_id, customer_id, order_id=None):
                 customer_id=customer_id,
                 ordered_at=arrow.now('Asia/Bangkok').datetime,
                 ordered_by=current_user,
+                code=LabTestOrder.generate_code(),
                 test_records=[LabTestRecord(test_id=tid) for tid in test_ids],
             )
             activity = LabActivity(
@@ -403,6 +464,30 @@ def add_test_order(lab_id, customer_id, order_id=None):
                            order=order,
                            customer_id=customer_id,
                            selected_test_ids=selected_test_ids)
+
+
+@lab.route('/orders/<int:order_id>/barcode')
+@login_required
+def print_order_barcode(order_id):
+    order = LabTestOrder.query.get(order_id)
+    containers = defaultdict(int)
+    container_counts = defaultdict(int)
+    barcodes = []
+    for record in order.test_records:
+        for sc in record.test.specimen_container_items:
+            code = f'{order.code}{sc.specimen_container.number:02}{container_counts[sc.specimen_container.container]}'
+            if containers[code] + sc.volume < sc.specimen_container.max_volume:
+                containers[code] += sc.volume
+            else:
+                container_counts[sc.specimen_container] += 1
+                code = f'{order.code}{sc.specimen_container.number:02}{container_counts[sc.specimen_container.container]}'
+                containers[code] += sc.volume
+    for code in containers:
+        rv = BytesIO()
+        _text = f'{code} {order.ordered_at.strftime("%m/%d/%Y")}'
+        EAN13(code, writer=SVGWriter()).write(rv, {'module_height': 8.0, 'module_width': 0.3}, text=_text)
+        barcodes.append((order, rv.getvalue().decode('utf-8')))
+    return render_template('lab/order_barcode.html', barcodes=barcodes, order=order)
 
 
 @lab.route('/<int:lab_id>/patients/<int:customer_id>/auto-orders', methods=['POST'])
@@ -590,15 +675,11 @@ def show_customer_records(customer_id):
         return render_template('lab/customer_records.html', customer=customer)
 
 
-@lab.route('/customers/<int:customer_id>/orders/<int:order_id>/records')
+@lab.route('/orders/<int:order_id>/records')
 @login_required
-def show_customer_test_records(customer_id, order_id):
-    customer = LabCustomer.query.get(customer_id)
+def show_customer_test_records(order_id):
     order = LabTestOrder.query.get(order_id)
-
-    # if order.cancelled_at:
-    #     flash('The order has been cancelled.', 'danger')
-    #     return redirect(url_for('lab.show_customer_records', customer_id=customer_id))
+    customer = order.customer
     return render_template('lab/recordset_detail.html', customer=customer, order=order)
 
 
@@ -726,3 +807,38 @@ def export_data(lab_id):
             return send_file(output, download_name=f'{table}.xlsx')
 
     return render_template('lab/data_export.html', lab_id=lab_id)
+
+
+@lab.route('/payments/<int:order_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_payment_record(order_id):
+    order = LabTestOrder.query.get(order_id)
+    record = order.payment
+    form = LabPaymentRecordForm(obj=record) if record else LabPaymentRecordForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if order.payment:
+                record = order.payment
+            else:
+                record = LabOrderPaymentRecord()
+            form.populate_obj(record)
+            record.created_at = arrow.now('Asia/Bangkok').datetime
+            record.payment_datetime = arrow.now('Asia/Bangkok').datetime
+            record.order = order
+            db.session.add(record)
+            db.session.commit()
+            flash('Payment record has been saved.', 'success')
+        else:
+            flash(f'An error occurred. {form.errors}', 'danger')
+
+        resp = make_response()
+        resp.headers['HX-Refresh'] = 'true'
+        return resp
+    return render_template('lab/modals/payment_form.html', form=form, order=order)
+
+
+@lab.route('/reports/<int:order_id>/preview', methods=['GET', 'POST'])
+@login_required
+def preview_report(order_id):
+    order = LabTestOrder.query.get(order_id)
+    return render_template('lab/lab_report_preview.html', order=order)
