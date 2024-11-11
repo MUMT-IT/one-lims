@@ -11,6 +11,30 @@ from app.auth.models import User
 make_versioned(user_cls=None)
 
 
+class LabHNCount(db.Model):
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    year = db.Column('year', db.Integer, nullable=False)
+    month = db.Column('month', db.Integer, nullable=False)
+    count = db.Column('count', db.Integer, default=0)
+
+    def increment(self):
+        if self.count < 99999:
+            self.count += 1
+        else:
+            raise ValueError('HN count cannot exceed 99999 per month.')
+
+    @classmethod
+    def get_new_hn(cls, year, month):
+        _hn = cls.query.filter_by(year=year, month=month).first()
+        if not _hn:
+            today = datetime.today()
+            _hn = cls(year=today.year, month=today.month, count=0)
+        _hn.increment()
+        db.session.add(_hn)
+        db.session.commit()
+        return f'{str(_hn.year)[-2:]}{_hn.month:02}{_hn.count:05}'
+
+
 class LabCustomer(db.Model):
     __tablename__ = 'lab_customers'
     # id is used as an HN
@@ -34,6 +58,11 @@ class LabCustomer(db.Model):
     tel = db.Column('tel', db.String(), info={'label': 'หมายเลขโทรศัพท์'})
     pid = db.Column('pid', db.String(13), info={'label': 'หมายเลขบัตรประชาชน', 'validators': Length(min=13, max=13)})
     address = db.Column('address', db.Text(), info={'label': 'ที่อยู่'})
+    hn = db.Column('hn', db.String(), info={'label': 'HN'})
+
+    def get_hn(self):
+        today = datetime.today()
+        self.hn = LabHNCount.get_new_hn(today.year, today.month)
 
     @property
     def fullname(self):
@@ -279,7 +308,8 @@ class LabTestRecord(db.Model):
     test_id = db.Column('test_id', db.ForeignKey('lab_tests.id'))
     test = db.relationship(LabTest, backref=db.backref('test_records', cascade='all, delete-orphan'))
     order_id = db.Column('order_id', db.ForeignKey('lab_test_orders.id'))
-    order = db.relationship(LabTestOrder, backref=db.backref('test_records', lazy='dynamic', cascade='all, delete-orphan'))
+    order = db.relationship(LabTestOrder,
+                            backref=db.backref('test_records', lazy='dynamic', cascade='all, delete-orphan'))
     reject_record_id = db.Column('reject_record_id', db.ForeignKey('lab_order_reject_records.id'))
     reject_record = db.relationship('LabOrderRejectRecord', backref=db.backref('test_records'))
     received_at = db.Column('received_at', db.DateTime(timezone=True))
