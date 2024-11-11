@@ -6,7 +6,12 @@
 </head>
 <body>
 <table>
-    {% for barcode in barcodes %}
+    {% for order, barcode in barcodes %}
+        <tr>
+        <td>
+            {{ order.customer }}
+        </td>
+        </tr>
         <tr>
         <td>
             {{ barcode|safe }}

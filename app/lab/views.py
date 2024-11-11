@@ -301,6 +301,7 @@ def list_patients(lab_id):
 @lab.route('/<int:lab_id>/patients/<int:customer_id>', methods=['GET', 'POST'])
 @login_required
 def add_patient(lab_id, customer_id=None):
+    # TODO: use Ajax for datatable.
     if customer_id:
         customer = LabCustomer.query.get(customer_id)
         form = LabCustomerForm(obj=customer)
@@ -481,12 +482,11 @@ def print_order_barcode(order_id):
                 container_counts[sc.specimen_container] += 1
                 code = f'{order.code}{sc.specimen_container.number:02}{container_counts[sc.specimen_container.container]}'
                 containers[code] += sc.volume
-    print(container_counts)
-    print(containers)
     for code in containers:
         rv = BytesIO()
-        EAN13(code, writer=SVGWriter()).write(rv)
-        barcodes.append(rv.getvalue().decode('utf-8'))
+        _text = f'{code} {order.ordered_at.strftime("%m/%d/%Y")}'
+        EAN13(code, writer=SVGWriter()).write(rv, {'module_height': 8.0, 'module_width': 0.3}, text=_text)
+        barcodes.append((order, rv.getvalue().decode('utf-8')))
     return render_template('lab/order_barcode.html', barcodes=barcodes, order=order)
 
 
