@@ -3,8 +3,15 @@
 <div class="section">
     <div class="container">
         <h1 class="title has-text-centered">Lab Report</h1>
-        <h1 class="subtitle has-text-centered">Order ID: {{ order.code }}, {{ order.ordered_at|localdatetime }}</h1>
+        <div class="tags has-addons">
+            <span class="tag is-rounded is-dark is-medium">Order ID</span>
+            <span class="tag is-rounded is-success is-medium">{{ order.code }}</span>
+        </div>
         <table class="table is-fullwidth">
+            <tr>
+                <td><strong>HN</strong></td>
+                <td colspan="8"><strong>{{ order.customer.hn }}</strong></td>
+            </tr>
             <tr>
                 <td><strong>ชื่อ นามสกุล</strong></td>
                 <td>{{ order.customer.fullname }}</td>
@@ -32,7 +39,7 @@
             <th>ผลการทดสอบ</th>
             <th>หน่วย</th>
             <th>ค่าอ้างอิง</th>
-            <th>การแปลผล</th>
+            <th>การแปลผล/หมายเหตุ</th>
             </thead>
             <tbody>
             {% for rec in order.test_records %}

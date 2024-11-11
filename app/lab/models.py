@@ -60,7 +60,7 @@ class LabCustomer(db.Model):
     address = db.Column('address', db.Text(), info={'label': 'ที่อยู่'})
     hn = db.Column('hn', db.String(), info={'label': 'HN'})
 
-    def get_hn(self):
+    def generate_hn(self):
         today = datetime.today()
         self.hn = LabHNCount.get_new_hn(today.year, today.month)
 

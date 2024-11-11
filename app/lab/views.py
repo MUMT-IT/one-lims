@@ -305,11 +305,12 @@ def add_patient(lab_id, customer_id=None):
         customer = LabCustomer.query.get(customer_id)
         form = LabCustomerForm(obj=customer)
     else:
+        customer = None
         form = LabCustomerForm()
     lab = Laboratory.query.get(lab_id)
     if request.method == 'POST':
         if form.validate_on_submit():
-            if not customer_id:
+            if not customer:
                 customer = LabCustomer.query.filter_by(pid=form.pid.data, lab=lab).first()
                 if not customer:
                     customer = LabCustomer()
@@ -319,15 +320,8 @@ def add_patient(lab_id, customer_id=None):
 
             form.populate_obj(customer)
             customer.lab_id = lab_id
+            customer.generate_hn()
             db.session.add(customer)
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added a new patient',
-                detail=customer.fullname,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
             db.session.commit()
             if customer_id:
                 flash('Customer info has been updated.', 'success')

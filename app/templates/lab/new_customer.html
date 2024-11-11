@@ -9,6 +9,12 @@
                 <form method="post" class="box">
                     {{ form.hidden_tag() }}
                     <div class="field">
+                        <label class="label">{{ form.hn.label }}</label>
+                        <div class="control">
+                            {{ form.hn(class="input", readonly=True) }}
+                        </div>
+                    </div>
+                    <div class="field">
                         <label class="label">{{ form.title.label }}</label>
                         <div class="control">
                             <div class="select">
