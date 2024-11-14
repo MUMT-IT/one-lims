@@ -1,5 +1,6 @@
 alembic==1.12.0
 arrow==1.3.0
+bahttext==1.0.2
 blinker==1.6.3
 certifi==2019.11.28
 chardet==3.0.4

@@ -168,6 +168,10 @@ class LabTestProfile(db.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def price(self):
+        return sum([test.price for test in self.tests])
+
 
 class LabTest(db.Model):
     __versioned__ = {}
