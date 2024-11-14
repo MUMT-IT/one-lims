@@ -29,6 +29,18 @@
                             </label>
                         </div>
                     {% endfor %}
+                    {% for profile in lab.test_profiles %}
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="checkbox" name="profile_ids" value="{{ profile.id }}"
+                                        {% if profile.id in selected_profile_ids %}
+                                       checked
+                                        {% endif %}
+                                >
+                                {{ profile.name }}
+                            </label>
+                        </div>
+                    {% endfor %}
                     <div class="buttons is-centered">
                         {% if order %}
                             <a class="button is-light"

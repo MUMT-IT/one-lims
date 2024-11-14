@@ -10,6 +10,10 @@ from app.auth.models import User
 
 make_versioned(user_cls=None)
 
+test_profile_assoc = db.Table('test_profile_assoc',
+                              db.Column('test_id', db.ForeignKey('lab_tests.id'), primary_key=True),
+                              db.Column('profile_id', db.ForeignKey('lab_test_profiles.id')))
+
 
 class LabHNCount(db.Model):
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
@@ -154,6 +158,17 @@ class LabSpecimenContainer(db.Model):
         return self.container
 
 
+class LabTestProfile(db.Model):
+    __tablename__ = 'lab_test_profiles'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column('name', db.String(), nullable=False, info={'label': 'Name'})
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
+    lab = db.relationship(Laboratory, backref=db.backref('test_profiles', cascade='all, delete-orphan'))
+
+    def __str__(self):
+        return self.name
+
+
 class LabTest(db.Model):
     __versioned__ = {}
     __tablename__ = 'lab_tests'
@@ -178,6 +193,10 @@ class LabTest(db.Model):
                                                           'choices': [(c, c) for c in ['Numeric', 'Text']]})
     price = db.Column('price', db.Numeric(), info={'label': 'Price'})
     unit = db.Column('unit', db.String(), info={'label': 'หน่วย'})
+
+    profiles = db.relationship(LabTestProfile,
+                               secondary=test_profile_assoc,
+                               backref=db.backref('tests'))
 
     def __str__(self):
         return self.name
@@ -286,7 +305,7 @@ class LabTestOrder(db.Model):
 
     @property
     def amount_balance(self):
-        return sum([rec.test.price for rec in self.test_records])
+        return sum([rec.test.price for rec in self.active_test_records])
 
     @property
     def last_reported_record(self):
@@ -317,13 +336,13 @@ class LabTestRecord(db.Model):
     receiver = db.relationship(User,
                                backref=db.backref('received_test_records'),
                                foreign_keys=[receiver_id])
+    profile_id = db.Column('profile_id', db.ForeignKey('lab_test_profiles.id'))
 
     @property
     def is_active(self):
         return not self.cancelled and \
             not self.reject_record and \
-            not self.order.cancelled_at and \
-            not self.order.approved_at
+            not self.order.cancelled_at
 
     def to_dict(self):
         return {
@@ -341,6 +360,8 @@ class LabTestRecord(db.Model):
 
     @property
     def interpret(self):
+        if not self.num_result:
+            return ''
         if self.test.min_ref_value and self.num_result < self.test.min_ref_value:
             return 'LOW'
         if self.test.max_ref_value and self.num_result < self.test.max_ref_value:
@@ -420,6 +441,7 @@ class LabOrderPaymentRecord(db.Model):
                                                                                 ('Cash', 'QR', 'Credit Card')]})
     order_id = db.Column('order_id', db.Integer, db.ForeignKey('lab_test_orders.id'))
     order = db.relationship(LabTestOrder, backref=db.backref('payments', lazy='dynamic', cascade='all, delete-orphan'))
+    creator = db.relationship(User)
 
 
 sa.orm.configure_mappers()

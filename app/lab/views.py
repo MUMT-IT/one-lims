@@ -1,5 +1,7 @@
 import random
 
+import pytz
+from bahttext import bahttext
 from barcode import EAN13
 from barcode.writer import SVGWriter
 from io import BytesIO
@@ -12,6 +14,15 @@ import pandas as pd
 from faker import Faker
 from flask import render_template, url_for, request, flash, redirect, make_response, send_file, session
 from flask_login import login_required, current_user
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, TableStyle, Table, KeepTogether, Spacer
 from sqlalchemy import func
 
 from . import lab_blueprint as lab
@@ -240,7 +251,8 @@ def edit_physical_exam_record(order_id):
     return render_template('lab/modals/physical_exam_form.html', form=form, order=order)
 
 
-@lab.route('/tests/<int:test_id>/specimens/container-items/<int:container_item_id>/edit', methods=['GET', 'DELETE', 'PUT'])
+@lab.route('/tests/<int:test_id>/specimens/container-items/<int:container_item_id>/edit',
+           methods=['GET', 'DELETE', 'PUT'])
 @lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
 @login_required
 def edit_specimen_container_item(test_id, container_item_id=None):
@@ -274,7 +286,6 @@ def edit_specimen_container_item(test_id, container_item_id=None):
                            form=form,
                            test_id=test_id,
                            container_item_id=container_item_id)
-
 
 
 @lab.route('/<int:lab_id>/quantests/<int:test_id>/remove', methods=['GET', 'POST'])
@@ -344,7 +355,7 @@ def add_random_patients(lab_id):
             profile = fake.profile()
             firstname, lastname = profile['name'].split(' ')
             age_ = date.today() - profile['birthdate']
-            if age_.days/365 < 15:
+            if age_.days / 365 < 15:
                 if profile['sex'] == 'M':
                     title = random.choice(['เด็กชาย', 'สามเณร'])
                 else:
@@ -383,10 +394,12 @@ def add_random_patients(lab_id):
 def add_test_order(lab_id, customer_id, order_id=None):
     lab = Laboratory.query.get(lab_id)
     selected_test_ids = []
+    selected_profile_ids = []
     order = None
     if order_id:
         order = LabTestOrder.query.get(order_id)
-        selected_test_ids = [record.test.id for record in order.active_test_records]
+        selected_test_ids = [record.test.id for record in order.active_test_records if not record.profile_id]
+        selected_profile_ids = [record.profile_id for record in order.active_test_records]
     if request.method == 'DELETE':
         order.cancelled_at = arrow.now('Asia/Bangkok').datetime
         for rec in order.test_records:
@@ -407,9 +420,8 @@ def add_test_order(lab_id, customer_id, order_id=None):
         return resp
     if request.method == 'POST':
         form = request.form
-        test_ids = form.getlist('test_ids')
-        if test_ids:
-            test_ids = [int(test_id) for test_id in test_ids]
+        test_ids = [int(_id) for _id in form.getlist('test_ids')]
+        profile_ids = [int(_id) for _id in form.getlist('profile_ids')]
         if not order_id:
             order = LabTestOrder(
                 lab_id=lab_id,
@@ -419,15 +431,13 @@ def add_test_order(lab_id, customer_id, order_id=None):
                 code=LabTestOrder.generate_code(),
                 test_records=[LabTestRecord(test_id=tid) for tid in test_ids],
             )
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added an order.',
-                detail=order.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
+            for profile_id in profile_ids:
+                profile = LabTestProfile.query.get(profile_id)
+                order.test_records = order.test_records.all() + [LabTestRecord(test_id=test.id, profile_id=profile_id)
+                                                                 for test in profile.tests]
             flash('New order has been added.', 'success')
         else:
+            # TODO: refactor this part for better performance
             for test_id in test_ids:
                 if test_id not in selected_test_ids:
                     order.test_records.append(LabTestRecord(test_id=test_id))
@@ -436,26 +446,20 @@ def add_test_order(lab_id, customer_id, order_id=None):
                 if test_id not in test_ids:
                     test_record.cancelled = True
                     db.session.add(test_record)
-                    activity = LabActivity(
-                        lab_id=lab_id,
-                        actor=current_user,
-                        message='Cancelled a test order.',
-                        detail=test_record.id,
-                        added_at=arrow.now('Asia/Bangkok').datetime
-                    )
-                    db.session.add(activity)
-
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Updated an order.',
-                detail=order.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
+            for profile_id in profile_ids:
+                if profile_id not in selected_profile_ids:
+                    profile = LabTestProfile.query.get(profile_id)
+                    order.test_records = order.test_records.all() + [LabTestRecord(test_id=test.id,
+                                                                                   profile_id=profile_id)
+                                                                     for test in profile.tests]
+            for selected_profile_id in selected_profile_ids:
+                if selected_profile_id not in profile_ids:
+                    for test_record in order.test_records.filter_by(profile_id=selected_profile_id):
+                        test_record.cancelled = True
+                        db.session.add(test_record)
             flash('The order has been updated.', 'success')
 
         db.session.add(order)
-        db.session.add(activity)
         db.session.commit()
         return redirect(url_for('lab.show_customer_test_records',
                                 customer_id=customer_id, order_id=order.id))
@@ -463,6 +467,7 @@ def add_test_order(lab_id, customer_id, order_id=None):
                            lab=lab,
                            order=order,
                            customer_id=customer_id,
+                           selected_profile_ids=selected_profile_ids,
                            selected_test_ids=selected_test_ids)
 
 
@@ -473,7 +478,7 @@ def print_order_barcode(order_id):
     containers = defaultdict(int)
     container_counts = defaultdict(int)
     barcodes = []
-    for record in order.test_records:
+    for record in order.active_test_records:
         for sc in record.test.specimen_container_items:
             code = f'{order.code}{sc.specimen_container.number:02}{container_counts[sc.specimen_container.container]}'
             if containers[code] + sc.volume < sc.specimen_container.max_volume:
@@ -498,7 +503,7 @@ def auto_add_test_order(lab_id, customer_id):
     random_minutes = random.randint(0, 60)
     order_datetime = arrow.now('Asia/Bangkok').shift(minutes=+random_minutes)
     max_datetime = order_datetime
-    tests = LabTest.query.filter_by(lab_id=lab_id)\
+    tests = LabTest.query.filter_by(lab_id=lab_id) \
         .order_by(func.random()).limit(random.randint(1, num_tests))
     if request.method == 'POST':
         test_records = []
@@ -626,7 +631,8 @@ def reject_test_order(record_id):
             db.session.add(activity)
             db.session.commit()
             flash('The test has been rejected.', 'success')
-            return redirect(url_for('lab.show_customer_test_records', customer_id=record.order.customer.id, order_id=record.order.id))
+            return redirect(url_for('lab.show_customer_test_records', customer_id=record.order.customer.id,
+                                    order_id=record.order.id))
         else:
             flash('{}. Please contact the system admin.'.format(form.errors), 'danger')
     return render_template('lab/order_reject.html', form=form)
@@ -824,6 +830,7 @@ def edit_payment_record(order_id):
             form.populate_obj(record)
             record.created_at = arrow.now('Asia/Bangkok').datetime
             record.payment_datetime = arrow.now('Asia/Bangkok').datetime
+            record.creator = current_user
             record.order = order
             db.session.add(record)
             db.session.commit()
@@ -842,3 +849,294 @@ def edit_payment_record(order_id):
 def preview_report(order_id):
     order = LabTestOrder.query.get(order_id)
     return render_template('lab/lab_report_preview.html', order=order)
+
+
+sarabun_font = TTFont('Sarabun', 'app/static/fonts/THSarabunNew.ttf')
+pdfmetrics.registerFont(sarabun_font)
+style_sheet = getSampleStyleSheet()
+style_sheet.add(ParagraphStyle(name='ThaiStyle', fontName='Sarabun'))
+style_sheet.add(ParagraphStyle(name='ThaiStyleNumber', fontName='Sarabun', alignment=TA_RIGHT))
+style_sheet.add(ParagraphStyle(name='ThaiStyleCenter', fontName='Sarabun', alignment=TA_CENTER))
+style_sheet.add(ParagraphStyle(name='ThaiStyleRight', fontName='Sarabun', alignment=TA_RIGHT))
+
+bangkok = pytz.timezone('Asia/Bangkok')
+
+
+def generate_receipt_pdf(order, sign=False, cancel=False):
+    # logo = Image('app/static/img/logo-MU_black-white-2-1.png', 60, 60)
+
+    this_lab = Laboratory.query.get(session.get('lab_id'))
+
+    digi_name = Paragraph(
+        '<font size=12>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(ลายมือชื่อดิจิทัล/Digital Signature)<br/></font>',
+        style=style_sheet['ThaiStyle']) if sign else ""
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer,
+                            rightMargin=20,
+                            leftMargin=20,
+                            topMargin=180,
+                            bottomMargin=10,
+                            )
+    receipt_number = order.code
+    data = []
+    affiliation = f'''<para align=center><font size=28>
+            {this_lab.name}
+            </font></para>
+            '''
+    address = f'''<br/><br/><br/><br/><font size=10>
+            ที่อยู่ / Address <br/>
+            {this_lab.address}<br/><br/>
+            เลขประจำตัวผู้เสียภาษี / TAX ID<br/>
+            {this_lab.tax_id}
+            </font>
+            '''
+
+    receipt_info = '''<br/><br/><br/><br/><font size=10>
+            เลขที่ / NO. {receipt_number}<br/>
+            วันที่ / DATE {issued_date}<br/>
+            ออกโดย / ISSUER {issuer}<br/><br/>
+            พิมพ์เมื่อ / PRINT TIME {issue_datetime}<br/>
+            </font>
+            '''
+    issued_date = arrow.get(order.payment.created_at.astimezone(bangkok)).format(fmt='DD MMMM YYYY HH:mm:ss', locale='th-th')
+    receipt_info_ori = receipt_info.format(receipt_number=receipt_number,
+                                           issued_date=issued_date,
+                                           issuer=current_user,
+                                           issue_datetime=datetime.now().astimezone(bangkok).strftime('%d/%m/%Y %H:%M:%S')
+                                           )
+
+    header_content_ori = [[Paragraph(address, style=style_sheet['ThaiStyle']),
+                           [Paragraph(affiliation, style=style_sheet['ThaiStyle'])],
+                           [],
+                           Paragraph(receipt_info_ori, style=style_sheet['ThaiStyle'])]]
+
+    header_styles = TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+    ])
+
+    header_ori = Table(header_content_ori, colWidths=[150, 200, 0, 150])
+
+    header_ori.hAlign = 'CENTER'
+    header_ori.setStyle(header_styles)
+
+    customer_name = '''<para><font size=14>
+    ได้รับเงินจาก / PAYER {issued_for}<br/>
+    ที่อยู่ / ADDRESS {address}
+    </font></para>
+    '''.format(issued_for=order.customer.fullname, address=order.customer.address)
+    customer = Table([[Paragraph(customer_name, style=style_sheet['ThaiStyle'])]],
+                     colWidths=[300])
+    items = [[Paragraph('<font size=14>ลำดับ / No.</font>', style=style_sheet['ThaiStyleCenter']),
+              Paragraph('<font size=14>รายการ / Description</font>', style=style_sheet['ThaiStyleCenter']),
+              Paragraph('<font size=14>รวม / Total</font>', style=style_sheet['ThaiStyleCenter']),
+              ]]
+    total = 0
+    number_test = 0
+    total_profile_price = 0
+    total_special_price = 0
+    # if receipt.print_profile_note:
+    #     profile_tests = [t for t in receipt.record.ordered_tests if t.profile]
+    #     if profile_tests:
+    #         if receipt.print_profile_how == 'consolidated':
+    #             number_test += 1
+    #             profile_price = profile_tests[0].profile.quote
+    #             if profile_price > 0:
+    #                 item = [
+    #                     Paragraph('<font size=12>{}</font>'.format(number_test), style=style_sheet['ThaiStyleCenter']),
+    #                     Paragraph('<font size=12>การตรวจสุขภาพทางห้องปฏิบัติการ / Laboratory Tests</font>',
+    #                               style=style_sheet['ThaiStyle']),
+    #                     Paragraph('<font size=12>{:,.2f}</font>'.format(profile_price),
+    #                               style=style_sheet['ThaiStyleNumber']),
+    #                     Paragraph('<font size=12>-</font>', style=style_sheet['ThaiStyleCenter']),
+    #                     Paragraph('<font size=12>{:,.2f}</font>'.format(profile_price),
+    #                               style=style_sheet['ThaiStyleNumber']),
+    #                     ]
+    #                 items.append(item)
+    #                 total_profile_price += profile_price
+    #                 total += profile_price
+    #             else:
+    #                 for t in receipt.record.ordered_tests:
+    #                     if t.profile:
+    #                         total_profile_price += t.price
+    #                         total += t.price
+    #                 item = [Paragraph('<font size=12>{}</font>'.format(number_test),
+    #                                   style=style_sheet['ThaiStyleCenter']),
+    #                         Paragraph('<font size=12>การตรวจสุขภาพทางห้องปฏิบัติการ / Laboratory Tests</font>',
+    #                                   style=style_sheet['ThaiStyle']),
+    #                         Paragraph('<font size=12>{:,.2f}</font>'.format(total_profile_price),
+    #                                   style=style_sheet['ThaiStyleNumber']),
+    #                         Paragraph('<font size=12>-</font>', style=style_sheet['ThaiStyleCenter']),
+    #                         Paragraph('<font size=12>{:,.2f}</font>'.format(total_profile_price),
+    #                                   style=style_sheet['ThaiStyleNumber']),
+    #                         ]
+    #                 items.append(item)
+    for t in order.active_test_records:
+        price = t.test.price
+        total += price
+        number_test += 1
+        item = [Paragraph('<font size=14>{}</font>'.format(number_test), style=style_sheet['ThaiStyleCenter']),
+                Paragraph('<font size=14>{} ({})</font>'
+                          .format(t.test.name, t.test.detail or '-'),
+                          style=style_sheet['ThaiStyle']),
+                Paragraph('<font size=14>{:,.2f}</font>'.format(price), style=style_sheet['ThaiStyleNumber'])]
+        items.append(item)
+
+    total_thai = bahttext(total)
+    total_text = "รวมเงินทั้งสิ้น {}".format(total_thai)
+    items.append([
+        Paragraph('<font size=14></font>', style=style_sheet['ThaiStyle']),
+        Paragraph('<font size=14></font>', style=style_sheet['ThaiStyle']),
+        Paragraph('<font size=14></font>', style=style_sheet['ThaiStyle']),
+    ])
+    items.append([
+        Paragraph('<font size=14>{}</font>'.format(total_text), style=style_sheet['ThaiStyle']),
+        Paragraph('<font size=14></font>', style=style_sheet['ThaiStyle']),
+        Paragraph('<font size=14>{:,.2f}</font>'.format(total), style=style_sheet['ThaiStyleNumber'])
+    ])
+    item_table = Table(items, colWidths=[50, 310, 70], repeatRows=1, cornerRadii=(5, 5, 5, 5))
+    item_table.setStyle(TableStyle([
+        ('BOX', (0, 0), (-1, 0), 0.25, colors.black),
+        ('BOX', (0, -1), (-1, -1), 0.25, colors.black),
+        ('BOX', (0, 0), (0, -1), 0.25, colors.black),
+        ('BOX', (1, 0), (1, -1), 0.25, colors.black),
+        ('BOX', (2, 0), (2, -1), 0.25, colors.black),
+        # ('BOX', (0, 0), (2, 32), 0.25, colors.black),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, -2), (-1, -2), 10),
+    ]))
+    item_table.setStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE')])
+    item_table.setStyle([('SPAN', (0, -1), (1, -1))])
+
+    if order.payment.payment_method == 'Cash':
+        payment_info = Paragraph('<font size=14>ชำระเงินด้วย / PAYMENT METHOD: เงินสด / CASH</font>',
+                                 style=style_sheet['ThaiStyleRight'])
+    elif order.payment.payment_method == 'QR':
+        payment_info = Paragraph('<font size=14>ชำระเงินด้วย / PAYMENT METHOD: QR / QR</font>',
+                                 style=style_sheet['ThaiStyleRight'])
+    elif order.payment.payment_method == 'Credit Card':
+        payment_info = Paragraph(
+            '<font size=14>ชำระเงินด้วย / PAYMENT METHOD บัตรเครดิต / CREDIT CARD: หมายเลข / NUMBER {}-****-****-{}</font>'.format(
+                order.payment.card_number[:4], order.payment.card_number[-4:]),
+            style=style_sheet['ThaiStyleRight'])
+    else:
+        payment_info = Paragraph('<font size=14>ยังไม่ชำระเงิน / UNPAID</font>', style=style_sheet['ThaiStyleRight'])
+
+    sign_text = Paragraph(
+        '<br/><br/><br/><br/><font size=14>...................................<br/>({})<br/><br/>ผู้รับเงิน / CASHIER<br/></font>'.format(
+            order.payment.creator.fullname),
+        style=style_sheet['ThaiStyleCenter'])
+    total_content = [
+        [
+            payment_info,
+        ],
+        [
+            Paragraph(f"<font size=14>เมื่อ / Date Time {order.payment.payment_datetime.strftime('%d/%m/%Y %H:%M:%S')}</font>",
+                      style=style_sheet['ThaiStyleRight']),
+        ],
+        [
+            sign_text
+        ]
+    ]
+
+    total_table = Table(total_content, colWidths=[400])
+
+    def first_page_setup(canvas, doc):
+        canvas.saveState()
+        # Head
+        header = header_ori
+        w, h = header.wrap(doc.width, doc.topMargin)
+        header.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h)
+
+        subheader1 = Paragraph('<para align=center><font size=16>ใบเสร็จรับเงิน / RECEIPT<br/><br/></font></para>',
+                               style=style_sheet['ThaiStyle'])
+        w, h = subheader1.wrap(doc.width, doc.topMargin)
+        subheader1.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin - h * 5.5)
+
+        subheader2 = customer
+        w, h = subheader2.wrap(doc.width, doc.topMargin)
+        subheader2.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h * 5.5)
+
+        # logo_image = ImageReader('app/static/img/mu-watermark.png')
+        # canvas.drawImage(logo_image, 140, 265, mask='auto')
+        canvas.restoreState()
+
+    def later_pages_setup(canvas, doc):
+        canvas.saveState()
+        header = header_ori
+        w, h = header.wrap(doc.width, doc.topMargin)
+        header.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h)
+
+        subheader1 = Paragraph('<para align=center><font size=16>ใบเสร็จรับเงิน / RECEIPT<br/><br/></font></para>',
+                               style=style_sheet['ThaiStyle'])
+        w, h = subheader1.wrap(doc.width, doc.topMargin)
+        subheader1.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin - h * 5.5)
+
+        subheader2 = customer
+        w, h = subheader2.wrap(doc.width, doc.topMargin)
+        subheader2.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h * 5.5)
+        # logo_image = ImageReader('app/static/img/mu-watermark.png')
+        # canvas.drawImage(logo_image, 140, 265, mask='auto')
+        canvas.restoreState()
+
+    data.append(KeepTogether(item_table))
+    data.append(KeepTogether(Spacer(1, 12)))
+    data.append(KeepTogether(total_table))
+
+    doc.build(data, onFirstPage=first_page_setup, onLaterPages=later_pages_setup, canvasmaker=PageNumCanvas)
+    buffer.seek(0)
+    return buffer
+
+
+class PageNumCanvas(canvas.Canvas):
+    """
+    http://code.activestate.com/recipes/546511-page-x-of-y-with-reportlab/
+    http://code.activestate.com/recipes/576832/
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, *args, **kwargs):
+        """Constructor"""
+        canvas.Canvas.__init__(self, *args, **kwargs)
+        self.pages = []
+
+    # ----------------------------------------------------------------------
+    def showPage(self):
+        """
+        On a page break, add information to the list
+        """
+        self.pages.append(dict(self.__dict__))
+        self._startPage()
+
+    # ----------------------------------------------------------------------
+    def save(self):
+        """
+        Add the page number to each page (page x of y)
+        """
+        page_count = len(self.pages)
+
+        for page in self.pages:
+            self.__dict__.update(page)
+            self.draw_page_number(page_count)
+            canvas.Canvas.showPage(self)
+
+        canvas.Canvas.save(self)
+
+    # ----------------------------------------------------------------------
+    def draw_page_number(self, page_count):
+        """
+        Add the page number
+        """
+        page = "%s/%s" % (self._pageNumber, page_count)
+        self.setFont("Sarabun", 12)
+        self.drawRightString(195 * mm, 290 * mm, page)
+
+
+@lab.route('/orders/<int:order_id>/payment-export')
+@login_required
+def export_receipt_pdf(order_id):
+    order = LabTestOrder.query.get(order_id)
+    receipt = generate_receipt_pdf(order)
+    return send_file(receipt, mimetype='application/pdf')

@@ -237,6 +237,13 @@
                 </span>
                 <span>Report</span>
             </a>
+            <a href="{{ url_for('lab.export_receipt_pdf', order_id=order.id) }}"
+               class="button is-rounded is-warning">
+                <span class="icon">
+                    <i class="fas fa-print"></i>
+                </span>
+                <span>Receipt</span>
+            </a>
             {% endif %}
         </div>
     </div>

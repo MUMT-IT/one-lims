@@ -42,7 +42,7 @@
             <th>การแปลผล/หมายเหตุ</th>
             </thead>
             <tbody>
-            {% for rec in order.test_records %}
+            {% for rec in order.active_test_records %}
                 <tr>
                     <td>{{ rec.test.name }}</td>
                     <td>{{ rec.num_result or rec.text_result }}</td>
