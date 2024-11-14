@@ -33,7 +33,7 @@
                                         <td>
                                             <a href="{{ url_for('lab.show_customer_test_records', customer_id=customer.id, order_id=order.id) }}">
                                                 <span class="tag is-warning is-rounded">
-                                                    {{ order.test_records.all()|length }}
+                                                    {{ order.active_test_records|length }}
                                                 </span>
                                             </a>
                                         </td>

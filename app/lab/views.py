@@ -394,10 +394,12 @@ def add_random_patients(lab_id):
 def add_test_order(lab_id, customer_id, order_id=None):
     lab = Laboratory.query.get(lab_id)
     selected_test_ids = []
+    selected_profile_ids = []
     order = None
     if order_id:
         order = LabTestOrder.query.get(order_id)
-        selected_test_ids = [record.test.id for record in order.active_test_records]
+        selected_test_ids = [record.test.id for record in order.active_test_records if not record.profile_id]
+        selected_profile_ids = [record.profile_id for record in order.active_test_records]
     if request.method == 'DELETE':
         order.cancelled_at = arrow.now('Asia/Bangkok').datetime
         for rec in order.test_records:
@@ -418,9 +420,8 @@ def add_test_order(lab_id, customer_id, order_id=None):
         return resp
     if request.method == 'POST':
         form = request.form
-        test_ids = form.getlist('test_ids')
-        if test_ids:
-            test_ids = [int(test_id) for test_id in test_ids]
+        test_ids = [int(_id) for _id in form.getlist('test_ids')]
+        profile_ids = [int(_id) for _id in form.getlist('profile_ids')]
         if not order_id:
             order = LabTestOrder(
                 lab_id=lab_id,
@@ -430,15 +431,13 @@ def add_test_order(lab_id, customer_id, order_id=None):
                 code=LabTestOrder.generate_code(),
                 test_records=[LabTestRecord(test_id=tid) for tid in test_ids],
             )
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added an order.',
-                detail=order.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
+            for profile_id in profile_ids:
+                profile = LabTestProfile.query.get(profile_id)
+                order.test_records = order.test_records.all() + [LabTestRecord(test_id=test.id, profile_id=profile_id)
+                                                                 for test in profile.tests]
             flash('New order has been added.', 'success')
         else:
+            # TODO: refactor this part for better performance
             for test_id in test_ids:
                 if test_id not in selected_test_ids:
                     order.test_records.append(LabTestRecord(test_id=test_id))
@@ -447,26 +446,20 @@ def add_test_order(lab_id, customer_id, order_id=None):
                 if test_id not in test_ids:
                     test_record.cancelled = True
                     db.session.add(test_record)
-                    activity = LabActivity(
-                        lab_id=lab_id,
-                        actor=current_user,
-                        message='Cancelled a test order.',
-                        detail=test_record.id,
-                        added_at=arrow.now('Asia/Bangkok').datetime
-                    )
-                    db.session.add(activity)
-
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Updated an order.',
-                detail=order.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
+            for profile_id in profile_ids:
+                if profile_id not in selected_profile_ids:
+                    profile = LabTestProfile.query.get(profile_id)
+                    order.test_records = order.test_records.all() + [LabTestRecord(test_id=test.id,
+                                                                                   profile_id=profile_id)
+                                                                     for test in profile.tests]
+            for selected_profile_id in selected_profile_ids:
+                if selected_profile_id not in profile_ids:
+                    for test_record in order.test_records.filter_by(profile_id=selected_profile_id):
+                        test_record.cancelled = True
+                        db.session.add(test_record)
             flash('The order has been updated.', 'success')
 
         db.session.add(order)
-        db.session.add(activity)
         db.session.commit()
         return redirect(url_for('lab.show_customer_test_records',
                                 customer_id=customer_id, order_id=order.id))
@@ -474,6 +467,7 @@ def add_test_order(lab_id, customer_id, order_id=None):
                            lab=lab,
                            order=order,
                            customer_id=customer_id,
+                           selected_profile_ids=selected_profile_ids,
                            selected_test_ids=selected_test_ids)
 
 
@@ -484,7 +478,7 @@ def print_order_barcode(order_id):
     containers = defaultdict(int)
     container_counts = defaultdict(int)
     barcodes = []
-    for record in order.test_records:
+    for record in order.active_test_records:
         for sc in record.test.specimen_container_items:
             code = f'{order.code}{sc.specimen_container.number:02}{container_counts[sc.specimen_container.container]}'
             if containers[code] + sc.volume < sc.specimen_container.max_volume:
@@ -836,6 +830,7 @@ def edit_payment_record(order_id):
             form.populate_obj(record)
             record.created_at = arrow.now('Asia/Bangkok').datetime
             record.payment_datetime = arrow.now('Asia/Bangkok').datetime
+            record.creator = current_user
             record.order = order
             db.session.add(record)
             db.session.commit()
@@ -977,7 +972,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
     #                                   style=style_sheet['ThaiStyleNumber']),
     #                         ]
     #                 items.append(item)
-    for t in order.test_records:
+    for t in order.active_test_records:
         price = t.test.price
         total += price
         number_test += 1
