@@ -1,4 +1,5 @@
 import random
+import textwrap
 
 import pytz
 from bahttext import bahttext
@@ -863,13 +864,9 @@ bangkok = pytz.timezone('Asia/Bangkok')
 
 
 def generate_receipt_pdf(order, sign=False, cancel=False):
-    # logo = Image('app/static/img/logo-MU_black-white-2-1.png', 60, 60)
+    logo = Image('app/static/img/ONELAB-01-mini.png', width=200)
 
     this_lab = Laboratory.query.get(session.get('lab_id'))
-
-    digi_name = Paragraph(
-        '<font size=12>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(ลายมือชื่อดิจิทัล/Digital Signature)<br/></font>',
-        style=style_sheet['ThaiStyle']) if sign else ""
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer,
@@ -907,8 +904,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
                                            )
 
     header_content_ori = [[Paragraph(address, style=style_sheet['ThaiStyle']),
-                           [Paragraph(affiliation, style=style_sheet['ThaiStyle'])],
-                           [],
+                           [logo],
                            Paragraph(receipt_info_ori, style=style_sheet['ThaiStyle'])]]
 
     header_styles = TableStyle([
@@ -916,18 +912,17 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
     ])
 
-    header_ori = Table(header_content_ori, colWidths=[150, 200, 0, 150])
+    header_ori = Table(header_content_ori, colWidths=[130, 240, 150])
 
     header_ori.hAlign = 'CENTER'
     header_ori.setStyle(header_styles)
 
-    customer_name = '''<para><font size=14>
+    customer_name = '''<para><font size=11>
     ได้รับเงินจาก / PAYER {issued_for}<br/>
-    ที่อยู่ / ADDRESS {address}
+    ที่อยู่ / ADDRESS<br/>{address}
     </font></para>
-    '''.format(issued_for=order.customer.fullname, address=order.customer.address)
-    customer = Table([[Paragraph(customer_name, style=style_sheet['ThaiStyle'])]],
-                     colWidths=[300])
+    '''.format(issued_for=order.customer.fullname, address='<br/>'.join(textwrap.wrap(order.customer.address, width=100)))
+    customer = Paragraph(customer_name, style=style_sheet['ThaiStyle'])
     items = [[Paragraph('<font size=14>ลำดับ / No.</font>', style=style_sheet['ThaiStyleCenter']),
               Paragraph('<font size=14>รายการ / Description</font>', style=style_sheet['ThaiStyleCenter']),
               Paragraph('<font size=14>รวม / Total</font>', style=style_sheet['ThaiStyleCenter']),
@@ -995,7 +990,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
         Paragraph('<font size=14></font>', style=style_sheet['ThaiStyle']),
         Paragraph('<font size=14>{:,.2f}</font>'.format(total), style=style_sheet['ThaiStyleNumber'])
     ])
-    item_table = Table(items, colWidths=[50, 310, 70], repeatRows=1, cornerRadii=(5, 5, 5, 5))
+    item_table = Table(items, colWidths=[50, 350, 70], repeatRows=1, cornerRadii=(5, 5, 5, 5))
     item_table.setStyle(TableStyle([
         ('BOX', (0, 0), (-1, 0), 0.25, colors.black),
         ('BOX', (0, -1), (-1, -1), 0.25, colors.black),
@@ -1057,7 +1052,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
 
         subheader2 = customer
         w, h = subheader2.wrap(doc.width, doc.topMargin)
-        subheader2.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h * 5.5)
+        subheader2.drawOn(canvas, doc.leftMargin + 48, doc.height + doc.topMargin - h * 4.5)
 
         # logo_image = ImageReader('app/static/img/mu-watermark.png')
         # canvas.drawImage(logo_image, 140, 265, mask='auto')
@@ -1076,7 +1071,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
 
         subheader2 = customer
         w, h = subheader2.wrap(doc.width, doc.topMargin)
-        subheader2.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h * 5.5)
+        subheader2.drawOn(canvas, doc.leftMargin + 48, doc.height + doc.topMargin - h * 4.5)
         # logo_image = ImageReader('app/static/img/mu-watermark.png')
         # canvas.drawImage(logo_image, 140, 265, mask='auto')
         canvas.restoreState()
