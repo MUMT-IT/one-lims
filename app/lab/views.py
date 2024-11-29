@@ -913,6 +913,13 @@ def preview_report(order_id):
     return render_template('lab/lab_report_preview.html', order=order)
 
 
+@lab.route('/requests/<int:order_id>/preview', methods=['GET', 'POST'])
+@login_required
+def preview_request(order_id):
+    order = LabTestOrder.query.get(order_id)
+    return render_template('lab/lab_request_preview.html', order=order)
+
+
 sarabun_font = TTFont('Sarabun', 'app/static/fonts/THSarabunNew.ttf')
 pdfmetrics.registerFont(sarabun_font)
 style_sheet = getSampleStyleSheet()
