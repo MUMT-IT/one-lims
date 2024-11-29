@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                <h1 class="title has-text-centered">Customers</h1>
+                {% include "messages.html" %}
+                <div class="box">
+                    <table id="table" class="table is-fullwidth is-striped">
+                        <thead>
+                        <th>HN</th>
+                        <th>Title</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Gender</th>
+                        <th>Date of Birth</th>
+                        <th>Tel.</th>
+                        <th>Pending Orders</th>
+                        <th></th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <span>{{ customer.hn }}</span>
+                                </td>
+                                <td>{{ customer.title }}</td>
+                                <td>{{ customer.firstname }}</td>
+                                <td>{{ customer.lastname }}</td>
+                                <td>{{ customer.gender }}</td>
+                                <td>{{ customer.dob }}</td>
+                                <td>{{ customer.tel }}</td>
+                                <td>
+                                    <a href="{{ url_for('lab.show_customer_records', customer_id=customer.id) }}">
+                                        <span class="tag is-warning is-rounded">
+                                        {{ customer.pending_test_orders|length }}
+                                    </span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <a class="button is-rounded is-small is-success"
+                                        href="{{ url_for('lab.add_test_order', lab_id=lab.id, customer_id=customer.id) }}">
+                                        <span class="icon">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </span>
+                                        <span>Order</span>
+                                    </a>
+                                    <a class="button is-rounded is-small is-primary"
+                                        href="{{ url_for('lab.show_customer_records', customer_id=customer.id) }}">
+                                        <span class="icon">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </span>
+                                        <span>Orders</span>
+                                    </a>
+                                    <a class="button is-rounded is-small is-light"
+                                       href="{{ url_for('lab.add_patient', lab_id=lab.id, customer_id=customer.id) }}">
+                                        <span class="icon">
+                                            <i class="fas fa-info-circle"></i>
+                                        </span>
+                                        <span>Info</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="buttons is-centered">
+            <a href="{{ url_for('lab.landing', lab_id=lab.id) }}"
+               class="button is-light is-rounded">
+                <span class="icon">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                <span>Back</span>
+            </a>
+            <a href="{{ url_for('lab.list_test_orders', lab_id=lab.id) }}"
+               class="button is-primary is-rounded">
+                <span class="icon">
+                    <i class="fas fa-list-ol"></i>
+                </span>
+                <span>Orders</span>
+            </a>
+            <a href="{{ url_for('lab.list_pending_orders', lab_id=lab.id) }}"
+               class="button is-warning is-rounded">
+                <span class="icon">
+                    <i class="far fa-clock"></i>
+                </span>
+                <span>Pending orders</span>
+            </a>
+        </div>
+    </div>
+    </section>
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script>
+        document.addEventListener('htmx:beforeSend', function (data) {
+            htmx.addClass(htmx.find('#' + data.target.id), 'is-loading')
+        })
+        $(document).ready(function () {
+            $('#table').DataTable();
+        })
+    </script>
+{% endblock %}
