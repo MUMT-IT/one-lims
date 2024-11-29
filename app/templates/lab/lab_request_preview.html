@@ -12,7 +12,7 @@
     }
 </style>
 {% endblock %}
-{% block title %}Laboratory Report{% endblock %}
+{% block title %}Laboratory Request{% endblock %}
 {% block content %}
 
 <div class="section">
@@ -43,16 +43,6 @@
                 <td><strong>เพศ</strong></td>
                 <td>{{ order.customer.gender }}</td>
             </tr>
-            <tr>
-                <td><strong>น้ำหนัก</strong></td>
-                <td>{{ order.physical_exam.weight }} กก.</td>
-                <td><strong>ส่วนสูง</strong></td>
-                <td>{{ order.physical_exam.height }} ซม.</td>
-                <td><strong>ดัชนีมวลกาย</strong></td>
-                <td>{{ order.physical_exam.bmi }} ({{ order.physical_exam.bmi_interpret }})</td>
-                <td><strong>อัตราการเต้นหัวใจ</strong></td>
-                <td>{{ order.physical_exam.heartrate }} ครั้ง/นาที</td>
-            </tr>
         </table>
         <h1 class="title has-text-centered">รายงานผลการตรวจ</h1>
         <table class="table is-striped is-fullwidth is-bordered">
@@ -67,7 +57,7 @@
             {% for rec in order.active_test_records %}
                 <tr>
                     <td>{{ rec.test.name }}</td>
-                    <td>{{ rec.num_result or rec.text_result }}</td>
+                    <td></td>
                     <td>{{ rec.test.unit }}</td>
                     <td>{{ rec.test.reference_values }}</td>
                     <td>{{ rec.interpret or '' }}{{ rec.comment or '' }}</td>
@@ -75,49 +65,12 @@
             {% endfor %}
             </tbody>
         </table>
-        <table class="table">
-            <tr>
-                <td>
-                    Reported By
-                </td>
-                <td>
-                    {{ order.last_reported_record.updater }}
-                </td>
-                <td>
-                    License ID {{ order.last_reported_record.updater.license_id }}
-                </td>
-            </tr>
-            <tr>
-                <td>Report Date Time</td>
-                <td colspan="2">{{ order.last_reported_record.updated_at|localdatetime }}</td>
-            </tr>
-            <tr>
-                <td>
-                    Approved By
-                </td>
-                <td>
-                    {{ order.approver }}
-                </td>
-                <td>
-                    License ID {{ order.approver.license_id }}
-                </td>
-            </tr>
-            <tr>
-                <td>Approve Date Time</td>
-                <td colspan="2">{{ order.approved_at|localdatetime }}</td>
-            </tr>
-        </table>
+    </div>
     </div>
     <div class="buttons is-centered">
         <a class="button is-rounded is-light" href="{{ url_for('lab.show_customer_test_records', order_id=order.id) }}">
             <span class="icon"><i class="fas fa-chevron-left"></i></span>
             <span>Back</span>
-        </a>
-        <a href="{{ url_for('lab.preview_request', order_id=order.id) }}" class="button is-rounded is-success">
-                <span class="icon">
-                    <i class="fas fa-print"></i>
-                </span>
-            <span>Request</span>
         </a>
 {#        <button onclick="window.print()" id="print-btn" class="button is-rounded is-success">#}
 {#                <span class="icon">#}
@@ -125,7 +78,6 @@
 {#                </span>#}
 {#            <span>Report</span>#}
 {#        </button>#}
-    </div>
     </div>
 </div>
 {% endblock %}
