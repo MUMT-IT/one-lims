@@ -61,6 +61,18 @@
                         </div>
                     </div>
                     <div class="field">
+                        <label class="label">{{ form.emergency_person.label }}</label>
+                        <div class="control">
+                            {{ form.emergency_person(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.emergency_tel.label }}</label>
+                        <div class="control">
+                            {{ form.emergency_tel(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
                         <label class="label">{{ form.pid.label }}</label>
                         <div class="control">
                             {{ form.pid(class="input is-danger") }}

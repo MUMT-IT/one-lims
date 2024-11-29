@@ -103,6 +103,8 @@ class LabCustomer(db.Model):
     pid = db.Column('pid', db.String(13), info={'label': 'หมายเลขบัตรประชาชน', 'validators': Length(min=13, max=13)})
     address = db.Column('address', db.Text(), info={'label': 'ที่อยู่'})
     hn = db.Column('hn', db.String(), info={'label': 'HN'})
+    emergency_person = db.Column('emergency_person', db.String(), info={'label': 'กรณีฉุกเฉินติดต่อชื่อ'})
+    emergency_tel = db.Column('emergency_telephone', db.String(), info={'label': 'โทรศัพท์ฉุกเฉิน'})
     drug_allergies = db.relationship(LabCustomerDrugAllergy,
                                      secondary=customer_drug_assoc,
                                      backref=db.backref('customers'))
