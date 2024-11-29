@@ -1,4 +1,5 @@
 import random
+import textwrap
 
 import pytz
 from bahttext import bahttext
@@ -12,7 +13,7 @@ from datetime import date
 import arrow
 import pandas as pd
 from faker import Faker
-from flask import render_template, url_for, request, flash, redirect, make_response, send_file, session
+from flask import render_template, url_for, request, flash, redirect, make_response, send_file, session, jsonify
 from flask_login import login_required, current_user
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER
@@ -308,11 +309,24 @@ def list_patients(lab_id):
     return render_template('lab/customer_list.html', lab=lab)
 
 
+def add_customer_items_from_select(fieldname, model, attribute, attrname, lab_id):
+    values = request.form.getlist(fieldname)
+    objs = []
+    for value in values:
+        obj = model.query.filter(attribute == value).filter_by(lab_id=lab_id).first()
+        if not obj:
+            obj = model(lab_id=lab_id)
+            setattr(obj, attrname, value)
+        objs.append(obj)
+    return objs
+
+
 @lab.route('/<int:lab_id>/patients/add', methods=['GET', 'POST'])
 @lab.route('/<int:lab_id>/patients/<int:customer_id>', methods=['GET', 'POST'])
 @login_required
 def add_patient(lab_id, customer_id=None):
     # TODO: use Ajax for datatable.
+    LabCustomerForm = create_customer_form(lab_id)
     if customer_id:
         customer = LabCustomer.query.get(customer_id)
         form = LabCustomerForm(obj=customer)
@@ -322,17 +336,29 @@ def add_patient(lab_id, customer_id=None):
     lab = Laboratory.query.get(lab_id)
     if request.method == 'POST':
         if form.validate_on_submit():
+            diseases_ = add_customer_items_from_select('underlying_diseases',
+                                                       LabCustomerUnderlyingDisease,
+                                                       LabCustomerUnderlyingDisease.desc,
+                                                       'desc',
+                                                       lab_id)
+            drugs_ = add_customer_items_from_select('drug_allergies',
+                                                    LabCustomerDrugAllergy,
+                                                    LabCustomerDrugAllergy.drug,
+                                                    'drug',
+                                                    lab_id)
             if not customer:
                 customer = LabCustomer.query.filter_by(pid=form.pid.data, lab=lab).first()
                 if not customer:
                     customer = LabCustomer()
+                    customer.generate_hn()
+                    customer.lab_id = lab_id
                 else:
                     flash('The customer already registered.', 'warning')
                     return render_template('lab/new_customer.html', form=form, lab_id=lab_id)
 
             form.populate_obj(customer)
-            customer.lab_id = lab_id
-            customer.generate_hn()
+            customer.underlying_diseases = diseases_
+            customer.drug_allergies = drugs_
             db.session.add(customer)
             db.session.commit()
             if customer_id:
@@ -342,7 +368,21 @@ def add_patient(lab_id, customer_id=None):
             return render_template('lab/customer_list.html', lab=lab)
         else:
             flash(f'Failed to add a new customer. {form.errors}', 'danger')
-    return render_template('lab/new_customer.html', form=form, lab_id=lab_id)
+    return render_template('lab/new_customer.html', form=form, lab_id=lab_id, customer=customer)
+
+
+@lab.route('/api/labs/<int:lab_id>/underlying_diseases')
+@login_required
+def get_underlying_diseases(lab_id):
+    data = [{'id': d.desc, 'text': d.desc} for d in LabCustomerUnderlyingDisease.query.filter_by(lab_id=lab_id)]
+    return jsonify(results=data)
+
+
+@lab.route('/api/labs/<int:lab_id>/drug_allergies')
+@login_required
+def get_drug_allergies(lab_id):
+    data = [{'id': d.drug, 'text': d.drug} for d in LabCustomerDrugAllergy.query.filter_by(lab_id=lab_id)]
+    return jsonify(results=data)
 
 
 @lab.route('/<int:lab_id>/patients/random', methods=['POST'])
@@ -681,6 +721,15 @@ def show_customer_records(customer_id):
         return render_template('lab/customer_records.html', customer=customer)
 
 
+@lab.route('/labs/<int:lab_id>/customers/<int:customer_id>/profile')
+@login_required
+def show_customer_profile(lab_id, customer_id):
+    lab = Laboratory.query.get(lab_id)
+    customer = LabCustomer.query.get(customer_id)
+    if customer:
+        return render_template('lab/customer_profile.html', customer=customer, lab=lab)
+
+
 @lab.route('/orders/<int:order_id>/records')
 @login_required
 def show_customer_test_records(order_id):
@@ -863,13 +912,9 @@ bangkok = pytz.timezone('Asia/Bangkok')
 
 
 def generate_receipt_pdf(order, sign=False, cancel=False):
-    # logo = Image('app/static/img/logo-MU_black-white-2-1.png', 60, 60)
+    logo = Image('app/static/img/ONELAB-01-mini.png', width=200)
 
     this_lab = Laboratory.query.get(session.get('lab_id'))
-
-    digi_name = Paragraph(
-        '<font size=12>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(ลายมือชื่อดิจิทัล/Digital Signature)<br/></font>',
-        style=style_sheet['ThaiStyle']) if sign else ""
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer,
@@ -899,16 +944,17 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
             พิมพ์เมื่อ / PRINT TIME {issue_datetime}<br/>
             </font>
             '''
-    issued_date = arrow.get(order.payment.created_at.astimezone(bangkok)).format(fmt='DD MMMM YYYY HH:mm:ss', locale='th-th')
+    issued_date = arrow.get(order.payment.created_at.astimezone(bangkok)).format(fmt='DD MMMM YYYY HH:mm:ss',
+                                                                                 locale='th-th')
     receipt_info_ori = receipt_info.format(receipt_number=receipt_number,
                                            issued_date=issued_date,
                                            issuer=current_user,
-                                           issue_datetime=datetime.now().astimezone(bangkok).strftime('%d/%m/%Y %H:%M:%S')
+                                           issue_datetime=datetime.now().astimezone(bangkok).strftime(
+                                               '%d/%m/%Y %H:%M:%S')
                                            )
 
     header_content_ori = [[Paragraph(address, style=style_sheet['ThaiStyle']),
-                           [Paragraph(affiliation, style=style_sheet['ThaiStyle'])],
-                           [],
+                           [logo],
                            Paragraph(receipt_info_ori, style=style_sheet['ThaiStyle'])]]
 
     header_styles = TableStyle([
@@ -916,18 +962,18 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
     ])
 
-    header_ori = Table(header_content_ori, colWidths=[150, 200, 0, 150])
+    header_ori = Table(header_content_ori, colWidths=[130, 240, 150])
 
     header_ori.hAlign = 'CENTER'
     header_ori.setStyle(header_styles)
 
-    customer_name = '''<para><font size=14>
+    customer_name = '''<para><font size=11>
     ได้รับเงินจาก / PAYER {issued_for}<br/>
-    ที่อยู่ / ADDRESS {address}
+    ที่อยู่ / ADDRESS<br/>{address}
     </font></para>
-    '''.format(issued_for=order.customer.fullname, address=order.customer.address)
-    customer = Table([[Paragraph(customer_name, style=style_sheet['ThaiStyle'])]],
-                     colWidths=[300])
+    '''.format(issued_for=order.customer.fullname,
+               address='<br/>'.join(textwrap.wrap(order.customer.address, width=100)))
+    customer = Paragraph(customer_name, style=style_sheet['ThaiStyle'])
     items = [[Paragraph('<font size=14>ลำดับ / No.</font>', style=style_sheet['ThaiStyleCenter']),
               Paragraph('<font size=14>รายการ / Description</font>', style=style_sheet['ThaiStyleCenter']),
               Paragraph('<font size=14>รวม / Total</font>', style=style_sheet['ThaiStyleCenter']),
@@ -995,7 +1041,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
         Paragraph('<font size=14></font>', style=style_sheet['ThaiStyle']),
         Paragraph('<font size=14>{:,.2f}</font>'.format(total), style=style_sheet['ThaiStyleNumber'])
     ])
-    item_table = Table(items, colWidths=[50, 310, 70], repeatRows=1, cornerRadii=(5, 5, 5, 5))
+    item_table = Table(items, colWidths=[50, 350, 70], repeatRows=1, cornerRadii=(5, 5, 5, 5))
     item_table.setStyle(TableStyle([
         ('BOX', (0, 0), (-1, 0), 0.25, colors.black),
         ('BOX', (0, -1), (-1, -1), 0.25, colors.black),
@@ -1033,8 +1079,9 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
             payment_info,
         ],
         [
-            Paragraph(f"<font size=14>เมื่อ / Date Time {order.payment.payment_datetime.strftime('%d/%m/%Y %H:%M:%S')}</font>",
-                      style=style_sheet['ThaiStyleRight']),
+            Paragraph(
+                f"<font size=14>เมื่อ / Date Time {order.payment.payment_datetime.strftime('%d/%m/%Y %H:%M:%S')}</font>",
+                style=style_sheet['ThaiStyleRight']),
         ],
         [
             sign_text
@@ -1057,7 +1104,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
 
         subheader2 = customer
         w, h = subheader2.wrap(doc.width, doc.topMargin)
-        subheader2.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h * 5.5)
+        subheader2.drawOn(canvas, doc.leftMargin + 48, doc.height + doc.topMargin - h * 4.5)
 
         # logo_image = ImageReader('app/static/img/mu-watermark.png')
         # canvas.drawImage(logo_image, 140, 265, mask='auto')
@@ -1076,7 +1123,7 @@ def generate_receipt_pdf(order, sign=False, cancel=False):
 
         subheader2 = customer
         w, h = subheader2.wrap(doc.width, doc.topMargin)
-        subheader2.drawOn(canvas, doc.leftMargin + 28, doc.height + doc.topMargin - h * 5.5)
+        subheader2.drawOn(canvas, doc.leftMargin + 48, doc.height + doc.topMargin - h * 4.5)
         # logo_image = ImageReader('app/static/img/mu-watermark.png')
         # canvas.drawImage(logo_image, 140, 265, mask='auto')
         canvas.restoreState()
