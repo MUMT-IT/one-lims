@@ -11,8 +11,16 @@ from app.auth.models import User
 make_versioned(user_cls=None)
 
 test_profile_assoc = db.Table('test_profile_assoc',
-                              db.Column('test_id', db.ForeignKey('lab_tests.id'), primary_key=True),
+                              db.Column('test_id', db.ForeignKey('lab_tests.id')),
                               db.Column('profile_id', db.ForeignKey('lab_test_profiles.id')))
+
+customer_disease_assoc = db.Table('customer_disease_assoc',
+                                  db.Column('customer_id', db.ForeignKey('lab_customers.id')),
+                                  db.Column('disease_id', db.ForeignKey('lab_customer_underlying_diseases.id')))
+
+customer_drug_assoc = db.Table('customer_drug_assoc',
+                               db.Column('customer_id', db.ForeignKey('lab_customers.id')),
+                               db.Column('drug_id', db.ForeignKey('lab_customer_drug_allergies.id')))
 
 
 class LabHNCount(db.Model):
@@ -39,6 +47,38 @@ class LabHNCount(db.Model):
         return f'{str(_hn.year)[-2:]}{_hn.month:02}{_hn.count:05}'
 
 
+class LabCustomerUnderlyingDisease(db.Model):
+    __tablename__ = 'lab_customer_underlying_diseases'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    desc = db.Column('description', db.String(), nullable=False)
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'), nullable=False)
+
+    def __str__(self):
+        return self.desc
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'text': self.desc
+        }
+
+
+class LabCustomerDrugAllergy(db.Model):
+    __tablename__ = 'lab_customer_drug_allergies'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    drug = db.Column('description', db.String(), nullable=False)
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'), nullable=False)
+
+    def __str__(self):
+        return self.drug
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'text': self.drug
+        }
+
+
 class LabCustomer(db.Model):
     __tablename__ = 'lab_customers'
     # id is used as an HN
@@ -63,10 +103,17 @@ class LabCustomer(db.Model):
     pid = db.Column('pid', db.String(13), info={'label': 'หมายเลขบัตรประชาชน', 'validators': Length(min=13, max=13)})
     address = db.Column('address', db.Text(), info={'label': 'ที่อยู่'})
     hn = db.Column('hn', db.String(), info={'label': 'HN'})
+    drug_allergies = db.relationship(LabCustomerDrugAllergy,
+                                     secondary=customer_drug_assoc,
+                                     backref=db.backref('customers'))
+    underlying_diseases = db.relationship(LabCustomerUnderlyingDisease,
+                                          secondary=customer_disease_assoc,
+                                          backref=db.backref('customers'))
 
     def generate_hn(self):
         today = datetime.today()
-        self.hn = LabHNCount.get_new_hn(today.year, today.month)
+        if not self.hn:
+            self.hn = LabHNCount.get_new_hn(today.year, today.month)
 
     @property
     def fullname(self):

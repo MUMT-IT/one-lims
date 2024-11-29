@@ -6,7 +6,7 @@ from wtforms.fields.core import FormField, FieldList
 from wtforms.widgets import Select
 from wtforms.validators import InputRequired, Optional
 from wtforms_alchemy import model_form_factory, QuerySelectField
-from wtforms_alchemy.fields import QuerySelectField
+from wtforms_alchemy.fields import QuerySelectField, QuerySelectMultipleField
 
 from .models import *
 from app import db
@@ -60,9 +60,12 @@ class LabTestForm(ModelForm):
     container_item = FormField(LabSpecimenContainerItemForm, default=LabSpecimenContainerItem())
 
 
-class LabCustomerForm(ModelForm):
-    class Meta:
-        model = LabCustomer
+def create_customer_form(lab_id):
+    class LabCustomerForm(ModelForm):
+        class Meta:
+            model = LabCustomer
+            exclude = ['hn']
+    return LabCustomerForm
 
 
 def create_lab_test_record_form(test, default=None):

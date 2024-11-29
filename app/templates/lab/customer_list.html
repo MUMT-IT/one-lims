@@ -63,12 +63,12 @@
                                     </span>
                                     <span>Orders</span>
                                 </a>
-                                <a class="button is-rounded is-small is-light"
-                                   href="{{ url_for('lab.add_patient', lab_id=lab.id, customer_id=customer.id) }}">
+                                <a class="button is-rounded is-small is-info"
+                                   href="{{ url_for('lab.show_customer_profile', lab_id=lab.id, customer_id=customer.id) }}">
                                     <span class="icon">
-                                        <i class="fas fa-pencil-alt"></i>
+                                        <i class="fas fa-info-circle"></i>
                                     </span>
-                                    <span>Edit Info</span>
+                                    <span>Info</span>
                                 </a>
                             </td>
                             </tr>

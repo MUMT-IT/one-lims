@@ -1,17 +1,23 @@
 {% extends "base.html" %}
 
+{% block styles %}
+    {{ super() }}
+    <link href="https://fastly.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
     <section class="section">
     <div class="container">
         {% include "messages.html" %}
         <div class="columns">
-            <div class="column is-one-third is-offset-4">
+            <div class="column is-two-thirds is-offset-2">
+                <h1 class="title has-text-centered">ทะเบียนข้อมูลผู้รับบริการ</h1>
                 <form method="post" class="box">
                     {{ form.hidden_tag() }}
                     <div class="field">
-                        <label class="label">{{ form.hn.label }}</label>
+                        <label class="label">HN</label>
                         <div class="control">
-                            {{ form.hn(class="input", readonly=True) }}
+                            <input type="text" value="{{ customer.hn }}" class="input" readonly/>
                         </div>
                     </div>
                     <div class="field">
@@ -66,6 +72,22 @@
                             {{ form.address(class="textarea") }}
                         </div>
                     </div>
+                    <div class="field">
+                        <label class="label">โรคประจำตัว</label>
+                        <select class="js-example-basic-multiple" multiple name="underlying_diseases" id="underlying_diseases">
+                            {% for disease in customer.underlying_diseases %}
+                                <option value="{{ disease.desc }}" selected>{{ disease.desc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label class="label">แพ้ยา</label>
+                        <select class="js-example-basic-multiple" multiple name="drug_allergies" id="drug_allergies">
+                            {% for drug in customer.drug_allergies %}
+                                <option value="{{ drug.drug }}" selected>{{ drug.drug }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <hr>
                     <div class="field is-grouped is-grouped-centered">
                         <div class="control">
@@ -86,4 +108,29 @@
         </div>
     </div>
     </section>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="https://fastly.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+    $(document).ready(function () {
+        $('#underlying_diseases').select2({
+            width: "100%",
+            tags: true,
+            ajax: {
+                url: {{ url_for('lab.get_underlying_diseases', lab_id=lab_id)|tojson|safe }},
+                dataType: "json"
+            }
+        })
+        $('#drug_allergies').select2({
+            width: "100%",
+            tags: true,
+            ajax: {
+                url: {{ url_for('lab.get_drug_allergies', lab_id=lab_id)|tojson|safe }},
+                dataType: "json"
+            }
+        })
+    })
+    </script>
 {% endblock %}
