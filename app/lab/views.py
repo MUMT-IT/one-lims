@@ -346,6 +346,11 @@ def add_patient(lab_id, customer_id=None):
                                                     LabCustomerDrugAllergy.drug,
                                                     'drug',
                                                     lab_id)
+            meds_ = add_customer_items_from_select('medications',
+                                                    LabCustomerMedication,
+                                                    LabCustomerMedication.drug,
+                                                    'drug',
+                                                    lab_id)
             if not customer:
                 customer = LabCustomer.query.filter_by(pid=form.pid.data, lab=lab).first()
                 if not customer:
@@ -359,6 +364,7 @@ def add_patient(lab_id, customer_id=None):
             form.populate_obj(customer)
             customer.underlying_diseases = diseases_
             customer.drug_allergies = drugs_
+            customer.medication = meds_
             db.session.add(customer)
             db.session.commit()
             if customer_id:
@@ -382,6 +388,13 @@ def get_underlying_diseases(lab_id):
 @login_required
 def get_drug_allergies(lab_id):
     data = [{'id': d.drug, 'text': d.drug} for d in LabCustomerDrugAllergy.query.filter_by(lab_id=lab_id)]
+    return jsonify(results=data)
+
+
+@lab.route('/api/labs/<int:lab_id>/medications')
+@login_required
+def get_medications(lab_id):
+    data = [{'id': d.drug, 'text': d.drug} for d in LabCustomerMedication.query.filter_by(lab_id=lab_id)]
     return jsonify(results=data)
 
 

@@ -22,6 +22,9 @@ customer_drug_assoc = db.Table('customer_drug_assoc',
                                db.Column('customer_id', db.ForeignKey('lab_customers.id')),
                                db.Column('drug_id', db.ForeignKey('lab_customer_drug_allergies.id')))
 
+customer_medication_assoc = db.Table('customer_medication_assoc',
+                                     db.Column('customer_id', db.ForeignKey('lab_customers.id')),
+                                     db.Column('drug_id', db.ForeignKey('lab_customer_medications.id')))
 
 class LabHNCount(db.Model):
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
@@ -79,6 +82,21 @@ class LabCustomerDrugAllergy(db.Model):
         }
 
 
+class LabCustomerMedication(db.Model):
+    __tablename__ = 'lab_customer_medications'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    drug = db.Column('description', db.String(), nullable=False)
+    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'), nullable=False)
+
+    def __str__(self):
+        return self.drug
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'text': self.drug
+        }
+
 class LabCustomer(db.Model):
     __tablename__ = 'lab_customers'
     # id is used as an HN
@@ -103,12 +121,17 @@ class LabCustomer(db.Model):
     pid = db.Column('pid', db.String(13), info={'label': 'หมายเลขบัตรประชาชน', 'validators': Length(min=13, max=13)})
     address = db.Column('address', db.Text(), info={'label': 'ที่อยู่'})
     hn = db.Column('hn', db.String(), info={'label': 'HN'})
+    emergency_person = db.Column('emergency_person', db.String(), info={'label': 'กรณีฉุกเฉินติดต่อชื่อ'})
+    emergency_tel = db.Column('emergency_telephone', db.String(), info={'label': 'โทรศัพท์ฉุกเฉิน'})
     drug_allergies = db.relationship(LabCustomerDrugAllergy,
                                      secondary=customer_drug_assoc,
                                      backref=db.backref('customers'))
     underlying_diseases = db.relationship(LabCustomerUnderlyingDisease,
                                           secondary=customer_disease_assoc,
                                           backref=db.backref('customers'))
+    medication = db.relationship(LabCustomerMedication,
+                                 secondary=customer_medication_assoc,
+                                 backref=db.backref('customers'))
 
     def generate_hn(self):
         today = datetime.today()

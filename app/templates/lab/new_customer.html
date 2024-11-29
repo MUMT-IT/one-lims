@@ -61,6 +61,18 @@
                         </div>
                     </div>
                     <div class="field">
+                        <label class="label">{{ form.emergency_person.label }}</label>
+                        <div class="control">
+                            {{ form.emergency_person(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.emergency_tel.label }}</label>
+                        <div class="control">
+                            {{ form.emergency_tel(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
                         <label class="label">{{ form.pid.label }}</label>
                         <div class="control">
                             {{ form.pid(class="input is-danger") }}
@@ -81,7 +93,15 @@
                         </select>
                     </div>
                     <div class="field">
-                        <label class="label">แพ้ยา</label>
+                        <label class="label">ยาที่ทานประจำ</label>
+                        <select class="js-example-basic-multiple" multiple name="medications" id="medications">
+                            {% for drug in customer.medication %}
+                                <option value="{{ drug.drug }}" selected>{{ drug.drug }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label class="label">แพ้ยา/อาหาร</label>
                         <select class="js-example-basic-multiple" multiple name="drug_allergies" id="drug_allergies">
                             {% for drug in customer.drug_allergies %}
                                 <option value="{{ drug.drug }}" selected>{{ drug.drug }}</option>
@@ -128,6 +148,14 @@
             tags: true,
             ajax: {
                 url: {{ url_for('lab.get_drug_allergies', lab_id=lab_id)|tojson|safe }},
+                dataType: "json"
+            }
+        })
+        $('#medications').select2({
+            width: "100%",
+            tags: true,
+            ajax: {
+                url: {{ url_for('lab.get_medications', lab_id=lab_id)|tojson|safe }},
                 dataType: "json"
             }
         })
