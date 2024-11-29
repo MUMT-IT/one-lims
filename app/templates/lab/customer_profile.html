@@ -29,8 +29,12 @@
                     <img src="{{ url_for('static', filename='img/ONELAB-01-mini.png') }}"/>
                 </div>
                 <h1 class="title is-size-4 has-text-centered">
+                    {{ customer.lab.name }}
+                </h1>
+                <h1 class="subtitle is-size-4 has-text-centered">
                     {{ customer.lab.address }} โทรศัพท์ {{ customer.lab.tel }}
                 </h1>
+                <hr/>
                 <h1 class="title has-text-centered">เวชระเบียนผู้รับบริการ</h1>
                     <table id="table" class="table is-fullwidth is-bordered is-striped">
                         <tbody>
