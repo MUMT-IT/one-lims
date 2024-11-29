@@ -1,13 +1,31 @@
 {% extends "base.html" %}
+{% block title %}Customer Information{% endblock %}
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        @media print
+        {
+            html, body { visibility: hidden; height: auto; }
+            #printable {
+                visibility: visible;
+                font-family: "Gill Sans", "Gill Sans MT", "Myriad Pro", "DejaVu Sans Condensed", Helvetica, Arial, sans-serif;
+                font-size: 9pt;
+            }
+        }
+        @page {
+            size: A4;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
     <section class="section">
     <div class="container">
         <div class="columns">
             <div class="column is-two-thirds is-offset-2">
-                <h1 class="title has-text-centered">Customers</h1>
                 {% include "messages.html" %}
-                <div>
+                <div id="printable">
+                <h1 class="title has-text-centered">เวชระเบียนผู้รับบริการ</h1>
                     <table id="table" class="table is-fullwidth is-bordered is-striped">
                         <tbody>
                             <tr>
@@ -17,14 +35,14 @@
                                 </td>
                             </tr>
                             <tr>
+                                <td><label class="label">ชื่อ</label></td>
+                                <td>{{ customer.title }}{{ customer.firstname }} {{ customer.lastname }}</td>
+                            </tr>
+                            <tr>
                                 <td><label class="label">หมายเลขบัตรประชาชน (PID)</label></td>
                                 <td>
                                     <span>{{ customer.pid }}</span>
                                 </td>
-                            </tr>
-                            <tr>
-                                <td><label class="label">ชื่อ</label></td>
-                                <td>{{ customer.title }}{{ customer.firstname }} {{ customer.lastname }}</td>
                             </tr>
                             <tr>
                                 <td><label class="label">เพศ</label></td>
@@ -35,24 +53,24 @@
                                 <td>{{ customer.dob|localdatetime(dateonly=True) }} ({{ customer.dob|humanizedt(granularity=['year']) }})</td>
                             </tr>
                             <tr>
-                                <td><label class="label">โทรศัพท์</label></td>
-                                <td>{{ customer.tel }}</td>
-                            </tr>
-                            <tr>
                                 <td><label class="label">โรคประจำตัว</label></td>
                                 <td>
-                                    {% for disease in customer.underlying_diseases %}
-                                        <span class="tag is-rounded is-success is-medium">{{ disease }}</span>
-                                    {% endfor %}
+                                    {{ customer.underlying_diseases|join(', ') }}
                                 </td>
                             </tr>
                             <tr>
                                 <td><label class="label">ประวัติแพ้ยา</label></td>
                                 <td>
-                                    {% for drug in customer.drug_allergies %}
-                                        <span class="tag is-rounded is-danger is-medium">{{ drug }}</span>
-                                    {% endfor %}
+                                    {{ customer.drug_allergies|join(', ') }}
                                 </td>
+                            </tr>
+                            <tr>
+                                <td><label class="label">โทรศัพท์</label></td>
+                                <td>{{ customer.tel }}</td>
+                            </tr>
+                            <tr>
+                                <td><label class="label">ที่อยู่</label></td>
+                                <td>{{ customer.address }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -60,7 +78,7 @@
             </div>
         </div>
         <div class="buttons is-centered">
-            <a href="{{ url_for('lab.landing', lab_id=lab.id) }}"
+            <a href="{{ url_for('lab.list_patients', lab_id=lab.id) }}"
                class="button is-light is-rounded">
                 <span class="icon">
                     <i class="fas fa-chevron-left"></i>
@@ -77,7 +95,4 @@
         </div>
     </div>
     </section>
-{% endblock %}
-{% block scripts %}
-    {{ super() }}
 {% endblock %}

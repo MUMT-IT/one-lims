@@ -1,8 +1,29 @@
 {% extends 'base.html' %}
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+    @media print
+    {
+        body * { visibility: hidden; }
+        #printable * { visibility: visible; }
+    }
+    @page {
+        size: A4;
+    }
+</style>
+{% endblock %}
+{% block title %}Laboratory Report{% endblock %}
 {% block content %}
+
 <div class="section">
     <div class="container">
-        <h1 class="title has-text-centered">Lab Report</h1>
+    <div id="printable">
+        <div class="has-text-centered">
+            <img src="{{ url_for('static', filename='img/ONELAB-01-mini.png') }}"/>
+        </div>
+        <h1 class="title is-size-4 has-text-centered">
+            {{ order.customer.lab.address }} โทรศัพท์ {{ order.customer.lab.tel }}
+        </h1>
         <div class="tags has-addons">
             <span class="tag is-rounded is-dark is-medium">Order ID</span>
             <span class="tag is-rounded is-success is-medium">{{ order.code }}</span>
@@ -33,6 +54,7 @@
                 <td>{{ order.physical_exam.heartrate }} ครั้ง/นาที</td>
             </tr>
         </table>
+        <h1 class="title has-text-centered">รายงานผลการตรวจ</h1>
         <table class="table is-striped is-fullwidth is-bordered">
             <thead>
             <th>ชื่อการทดสอบ</th>
@@ -85,18 +107,18 @@
                 <td colspan="2">{{ order.approved_at|localdatetime }}</td>
             </tr>
         </table>
+    </div>
     <div class="buttons is-centered">
         <a class="button is-rounded is-light" href="{{ url_for('lab.show_customer_test_records', order_id=order.id) }}">
             <span class="icon"><i class="fas fa-chevron-left"></i></span>
             <span>Back</span>
         </a>
-        <a href="{{ url_for('lab.preview_report', order_id=order.id) }}"
-           class="button is-rounded is-success">
+        <button onclick="window.print()" id="print-btn" class="button is-rounded is-success">
                 <span class="icon">
                     <i class="fas fa-print"></i>
                 </span>
             <span>Report</span>
-        </a>
+        </button>
     </div>
     </div>
 </div>
