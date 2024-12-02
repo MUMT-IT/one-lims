@@ -1215,46 +1215,49 @@ def export_receipt_pdf(order_id):
 @login_required
 def geo_checkin(lab_id):
     lab = Laboratory.query.get(lab_id)
+    affil = UserLabAffil.query.filter_by(lab_id=lab_id, user=current_user).first()
     if request.method == 'POST':
-        req_data = request.get_json()
-        place = req_data['data'].get('place', '0.0')
-        lat = req_data['data'].get('lat', '0.0')
-        lon = req_data['data'].get('lon', '0.0')
-        now = datetime.now(pytz.utc)
-        tz = pytz.timezone('Asia/Bangkok')
-        date_id = UserCheckinRecord.generate_date_id(now.astimezone(tz))
+        if affil:
+            session['lab_id'] = lab_id
+            req_data = request.get_json()
+            place = req_data['data'].get('place', '0.0')
+            lat = req_data['data'].get('lat', '0.0')
+            lon = req_data['data'].get('lon', '0.0')
+            now = datetime.now(pytz.utc)
+            tz = pytz.timezone('Asia/Bangkok')
+            date_id = UserCheckinRecord.generate_date_id(now.astimezone(tz))
 
-        if place == 'gj':
-            record = UserCheckinRecord(
-                date_id=date_id,
-                usesr=current_user,
-                lat=float(lat),
-                long=float(lon),
-                start_datetime=now,
-            )
-            activity = ''
-        else:
-            # use the first login of the day as the checkin time.
-            # use the last login of the day as the checkout time.
-            record = UserCheckinRecord.query.filter_by(date_id=date_id, user=current_user).first()
-
-            if not record:
+            if place == 'gj':
                 record = UserCheckinRecord(
                     date_id=date_id,
-                    user=current_user,
+                    usesr=current_user,
                     lat=float(lat),
                     long=float(lon),
                     start_datetime=now,
                 )
-                activity = 'checked in'
+                activity = ''
             else:
-                record.end_datetime = now
-                activity = 'checked out'
-        db.session.add(record)
-        db.session.commit()
-        return jsonify({'message': 'success',
-                        'activity': activity,
-                        'name': current_user.fullname,
-                        'time': now.isoformat(),
-                        })
+                # use the first login of the day as the checkin time.
+                # use the last login of the day as the checkout time.
+                record = UserCheckinRecord.query.filter_by(date_id=date_id, user=current_user).first()
+
+                if not record:
+                    record = UserCheckinRecord(
+                        date_id=date_id,
+                        user=current_user,
+                        lat=float(lat),
+                        long=float(lon),
+                        start_datetime=now,
+                    )
+                    activity = 'checked in'
+                else:
+                    record.end_datetime = now
+                    activity = 'checked out'
+            db.session.add(record)
+            db.session.commit()
+            return jsonify({'message': 'success',
+                            'activity': activity,
+                            'name': current_user.fullname,
+                            'time': now.isoformat(),
+                            })
     return render_template('lab/geo_checkin.html', lab=lab)
