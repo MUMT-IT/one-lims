@@ -17,6 +17,7 @@
             <div class="column box is-one-third is-offset-4">
                 <h1 class="title is-size-4">Select Tests</h1>
                 <form method="post">
+                <input type="hidden" value="{{ csrf_token() }}" name="csrf_token">
                     {% for test in lab.tests %}
                         <div class="field">
                             <label class="checkbox">
