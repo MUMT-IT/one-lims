@@ -31,6 +31,12 @@
                 <p class="panel-heading">
                     Menu
                 </p>
+                <a class="panel-block" href="{{ url_for('lab.geo_checkin', lab_id=lab.id) }}">
+                    <span class="panel-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </span>
+                    เช็คอินเข้าทำงาน (staff)
+                </a>
                 <a class="panel-block" href="{{ url_for('main.list_members', lab_id=lab.id) }}">
                     <span class="panel-icon">
                         <i class="fas fa-user-circle"></i>

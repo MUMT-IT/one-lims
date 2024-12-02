@@ -37,6 +37,7 @@
       <a class="navbar-item">
           Tests
       </a>
+        {% if session['lab_id'] %}
       <a class="navbar-item" href="{{ url_for('lab.edit_lab', lab_id=session['lab_id']) }}">
           Information
       </a>
@@ -44,6 +45,7 @@
       <a class="navbar-item" href="{{ url_for('lab.landing', lab_id=lab.id) }}">
           Main Menu
       </a>
+            {% endif %}
     </div>
     {% endif %}
   </div>
