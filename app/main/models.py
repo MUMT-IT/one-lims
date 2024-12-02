@@ -16,6 +16,8 @@ class Laboratory(db.Model):
     email = db.Column('email', EmailType(), info={'label': 'Email'})
     tel = db.Column('tel', db.String(), info={'label': 'Telephone'})
     tax_id = db.Column('tax_id', db.String(), info={'label': 'Tax ID'})
+    lat = db.Column('lat', db.Numeric(), info={'label': 'ละติจูด'})
+    long = db.Column('long', db.Numeric(), info={'label': 'ลองติจูด'})
 
     @property
     def num_pending_members(self):

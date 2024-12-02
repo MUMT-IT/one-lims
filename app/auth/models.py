@@ -66,3 +66,21 @@ class Role(db.Model):
 
     def __str__(self):
         return u'Role {}: can {} -> resource ID {}'.format(self.role_need, self.action_need, self.resource_id)
+
+
+class UserCheckinRecord(db.Model):
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    date_id = db.Column('date_id', db.String())
+    lat = db.Column('lat', db.Numeric())
+    long = db.Column('long', db.Numeric())
+    note = db.Column('note', db.Text())
+    start_datetime = db.Column('start_datetime', db.DateTime(timezone=True))
+    end_datetime = db.Column('end_datetime', db.DateTime(timezone=True))
+    user_id = db.Column('user_id', db.ForeignKey('user.id'))
+    user = db.relationship(User, backref=db.backref('checkin_records',
+                                                    lazy='dynamic',
+                                                    cascade='all, delete-orphan'))
+
+    @staticmethod
+    def generate_date_id(date):
+        return date.strftime('%Y%m%d')

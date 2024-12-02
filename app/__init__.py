@@ -1,5 +1,6 @@
 import os
 from flask import Flask
+from flask_wtf import CSRFProtect
 from flask_admin import Admin
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -12,6 +13,7 @@ migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 principal = Principal()
+csrf_protect = CSRFProtect()
 
 
 def create_app():
@@ -38,5 +40,6 @@ def create_app():
     admin.init_app(app)
     login_manager.init_app(app)
     principal.init_app(app)
+    csrf_protect.init_app(app)
 
     return app

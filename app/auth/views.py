@@ -26,7 +26,7 @@ def login():
                 if existing_user.check_password(password) and existing_user.is_active:
                     login_user(existing_user)
                     flash('You have logged in.', 'success')
-                    return redirect(url_for('main.index'))
+                    return redirect(request.args.get('next') or url_for('main.index'))
                 else:
                     flash('Wrong password or your account is not active.', 'danger')
         else:

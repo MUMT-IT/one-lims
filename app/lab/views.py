@@ -32,6 +32,8 @@ from .models import *
 from app.main.models import UserLabAffil
 from collections import namedtuple, defaultdict
 
+from ..auth.models import UserCheckinRecord
+
 TestOrder = namedtuple('TestOrder', ['order', 'ordered_at', 'type', 'approved_at'])
 
 fake = Faker(['th-TH'])
@@ -347,10 +349,10 @@ def add_patient(lab_id, customer_id=None):
                                                     'drug',
                                                     lab_id)
             meds_ = add_customer_items_from_select('medications',
-                                                    LabCustomerMedication,
-                                                    LabCustomerMedication.drug,
-                                                    'drug',
-                                                    lab_id)
+                                                   LabCustomerMedication,
+                                                   LabCustomerMedication.drug,
+                                                   'drug',
+                                                   lab_id)
             if not customer:
                 customer = LabCustomer.query.filter_by(pid=form.pid.data, lab=lab).first()
                 if not customer:
@@ -1207,3 +1209,52 @@ def export_receipt_pdf(order_id):
     order = LabTestOrder.query.get(order_id)
     receipt = generate_receipt_pdf(order)
     return send_file(receipt, mimetype='application/pdf')
+
+
+@lab.route('/labs/<int:lab_id>/geo-checkin', methods=['GET', 'POST'])
+@login_required
+def geo_checkin(lab_id):
+    lab = Laboratory.query.get(lab_id)
+    if request.method == 'POST':
+        req_data = request.get_json()
+        place = req_data['data'].get('place', '0.0')
+        lat = req_data['data'].get('lat', '0.0')
+        lon = req_data['data'].get('lon', '0.0')
+        now = datetime.now(pytz.utc)
+        tz = pytz.timezone('Asia/Bangkok')
+        date_id = UserCheckinRecord.generate_date_id(now.astimezone(tz))
+
+        if place == 'gj':
+            record = UserCheckinRecord(
+                date_id=date_id,
+                usesr=current_user,
+                lat=float(lat),
+                long=float(lon),
+                start_datetime=now,
+            )
+            activity = ''
+        else:
+            # use the first login of the day as the checkin time.
+            # use the last login of the day as the checkout time.
+            record = UserCheckinRecord.query.filter_by(date_id=date_id, user=current_user).first()
+
+            if not record:
+                record = UserCheckinRecord(
+                    date_id=date_id,
+                    user=current_user,
+                    lat=float(lat),
+                    long=float(lon),
+                    start_datetime=now,
+                )
+                activity = 'checked in'
+            else:
+                record.end_datetime = now
+                activity = 'checked out'
+        db.session.add(record)
+        db.session.commit()
+        return jsonify({'message': 'success',
+                        'activity': activity,
+                        'name': current_user.fullname,
+                        'time': now.isoformat(),
+                        })
+    return render_template('lab/geo_checkin.html', lab=lab)
