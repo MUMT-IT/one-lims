@@ -508,6 +508,7 @@ class LabOrderPaymentRecord(db.Model):
     created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
     creator_id = db.Column('creator_id', db.ForeignKey('user.id'))
     expired_at = db.Column('expired_at', db.DateTime(timezone=True))
+    receipt_id = db.Column('receipt_id', db.String())
     payment_datetime = db.Column('payment_datetime', db.DateTime(timezone=True))
     payment_amount = db.Column('payment_amount', db.Numeric(), info={'label': 'Payment Amount'})
     payment_method = db.Column('payment_method', db.String(), info={'label': 'Payment Method',
