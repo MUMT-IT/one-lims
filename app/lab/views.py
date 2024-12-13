@@ -186,6 +186,7 @@ def remove_choice_set(lab_id, choice_set_id):
 @lab.route('/<int:lab_id>/quantests/add', methods=['GET', 'POST'])
 @login_required
 def add_test(lab_id):
+    LabTestForm = create_lab_test_form(lab_id)
     form = LabTestForm(lab_id=lab_id)
     form.choice_set.query = LabResultChoiceSet.query.filter_by(lab_id=lab_id)
     if request.method == 'POST':
@@ -195,26 +196,19 @@ def add_test(lab_id):
             new_test.lab_id = lab_id
             new_test.added_at = arrow.now('Asia/Bangkok').datetime
             db.session.add(new_test)
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added a new quantitative test',
-                detail=form.name.data,
-                added_at=arrow.now('Asia/Bangkok').datetime,
-            )
-            db.session.add(activity)
             db.session.commit()
             flash('New quantative test has been added.')
             return redirect(url_for('lab.list_tests', lab_id=lab_id))
         else:
             flash(form.errors, 'danger')
-    return render_template('lab/new_test.html', form=form)
+    return render_template('lab/new_test.html', form=form, lab_id=lab_id)
 
 
 @lab.route('/<int:lab_id>/quantests/<int:test_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_test(lab_id, test_id):
     test = LabTest.query.get(test_id)
+    LabTestForm = create_lab_test_form(lab_id)
     form = LabTestForm(obj=test)
     form.choice_set.query = LabResultChoiceSet.query.filter_by(lab_id=lab_id)
     if request.method == 'POST':
@@ -259,6 +253,8 @@ def edit_physical_exam_record(order_id):
 @lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
 @login_required
 def edit_specimen_container_item(test_id, container_item_id=None):
+    test = LabTest.query.get(test_id)
+    LabSpecimenContainerItemForm = create_lab_specimen_container_item_form(test.lab_id)
     if container_item_id:
         container_item = LabSpecimenContainerItem.query.get(container_item_id)
         form = LabSpecimenContainerItemForm(obj=container_item)
@@ -270,7 +266,7 @@ def edit_specimen_container_item(test_id, container_item_id=None):
             if not container_item_id:
                 _item = LabSpecimenContainerItem()
                 form.populate_obj(_item)
-                _item.lab_id = session.get('lab_id')
+                _item.lab_id = test.lab_id
                 _item.lab_test_id = test_id
                 db.session.add(_item)
                 db.session.commit()
@@ -279,16 +275,62 @@ def edit_specimen_container_item(test_id, container_item_id=None):
                 <td>{_item.specimen_container}</td>
                 <td>{_item.volume}</td>
                 <td>{_item.note}</td>
+                <td>
+                    <a hx-get="{ url_for('lab.edit_specimen_container_item', test_id=_item.lab_test_id, container_item_id=_item.id) }"
+                       hx-target="#specimenContainerModal"
+                       hx-swap="innerHTML"
+                    >
+                    <span class="icon">
+                        <i class="fas fa-pencil-alt"></i>
+                    </span>
+                    </a>
+                </td>
                 </tr>
                 '''
                 resp = make_response(template)
                 resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
                 return resp
+        else:
+            print(form.errors)
+    if request.method == 'DELETE':
+        db.session.delete(container_item)
+        db.session.commit()
+        resp = make_response()
+        resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+        return resp
+    if request.method == 'PUT':
+        if form.validate_on_submit():
+            form.populate_obj(container_item)
+            db.session.add(container_item)
+            db.session.commit()
+            template = f'''
+                    <tr>
+                    <td>{container_item.specimen_container}</td>
+                    <td>{container_item.volume}</td>
+                    <td>{container_item.note}</td>
+                    <td>
+                        <a hx-get="{ url_for('lab.edit_specimen_container_item', test_id=container_item.lab_test_id, container_item_id=container_item.id) }"
+                           hx-target="#specimenContainerModal"
+                           hx-swap="innerHTML"
+                        >
+                        <span class="icon">
+                            <i class="fas fa-pencil-alt"></i>
+                        </span>
+                        </a>
+                    </td>
+                    </tr>
+                    '''
+            resp = make_response(template)
+            resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+            return resp
+        else:
+            print(form.errors)
 
     return render_template('lab/modals/specimen_container.html',
                            form=form,
                            test_id=test_id,
-                           container_item_id=container_item_id)
+                           container_item_id=container_item_id,
+                           target=f'#container-item-{container_item_id}')
 
 
 @lab.route('/<int:lab_id>/quantests/<int:test_id>/remove', methods=['GET', 'POST'])
@@ -913,6 +955,14 @@ def edit_payment_record(order_id):
 def preview_report(order_id):
     order = LabTestOrder.query.get(order_id)
     return render_template('lab/lab_report_preview.html', order=order)
+
+
+@lab.route('/reports/<int:order_id>/print', methods=['GET', 'POST'])
+@login_required
+def print_report(order_id):
+    order = LabTestOrder.query.get(order_id)
+    return render_template('lab/lab_report_print.html', order=order)
+
 
 
 @lab.route('/requests/<int:order_id>/preview', methods=['GET', 'POST'])

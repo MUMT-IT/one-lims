@@ -9,9 +9,10 @@
         </div>
         <h1 class="title has-text-centered">Lab Test</h1>
         <div class="columns">
-            <div class="column">
+            <div class="column is-half">
                 <form method="post">
                     {{ form.csrf_token }}
+                    <h1 class="title is-size-4">Test Information</h1>
                     <div class="field">
                         <label class="label">{{ form.code.label }}</label>
                         <div class="control">
@@ -28,6 +29,12 @@
                         <label class="label">{{ form.detail.label }}</label>
                         <div class="control">
                             {{ form.detail(class="textarea") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.tat.label }}</label>
+                        <div class="control">
+                            {{ form.tat(class="input") }}
                         </div>
                     </div>
                     <div class="field">
@@ -88,30 +95,31 @@
                             {{ form.active(class="checkbox") }}
                         </div>
                     </div>
-                    {{form.container_item.hidden_tag()}}
                     {% if not test %}
-                    <div class="notification">
-                        <div class="field">
-                            <label class="label">{{ form.container_item.specimen_container.label }}</label>
-                            <div class="select">
-                                {{ form.container_item.specimen_container() }}
+                        <h1 class="title is-size-4">Specimens Information</h1>
+                        {% for fc in form.specimen_container_items %}
+                            <div class="notification">
+                                <div class="field">
+                                    <label class="label">{{ fc.specimen_container.label }}</label>
+                                    <div class="select">
+                                        {{ fc.specimen_container() }}
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">{{ fc.volume.label }}</label>
+                                    <div class="control">
+                                        {{ fc.volume(class="input") }}
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">{{ fc.note.label }}</label>
+                                    <div class="control">
+                                        {{ fc.note(class="textarea") }}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="field">
-                            <label class="label">{{ form.container_item.volume.label }}</label>
-                            <div class="control">
-                                {{ form.container_item.volume(class="input") }}
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label class="label">{{ form.container_item.note.label }}</label>
-                            <div class="control">
-                                {{ form.container_item.note(class="textarea") }}
-                            </div>
-                        </div>
-                    </div>
+                        {% endfor %}
                     {% endif %}
-                    <hr>
                     <div class="field is-grouped is-grouped-centered">
                         <div class="control">
                             <a class="button is-outlined is-danger">
@@ -122,7 +130,7 @@
                             </a>
                         </div>
                         <div class="control">
-                            <a href="{{ request.referrer }}" class="button is-light">Cancel</a>
+                            <a href="{{ url_for('lab.list_tests', lab_id=lab_id) }}" class="button is-light">Cancel</a>
                         </div>
                         <div class="control">
                             <button class="button is-success">
@@ -142,13 +150,24 @@
                         <th>Container</th>
                         <th>Volume</th>
                         <th>Note</th>
+                        <th></th>
                     </thead>
                     <tbody>
                     {% for sc in test.specimen_container_items %}
-                        <tr>
+                        <tr id="container-item-{{ sc.id }}">
                         <td>{{ sc.specimen_container }}</td>
                         <td>{{ sc.volume }}</td>
                         <td>{{ sc.note }}</td>
+                        <td>
+                            <a hx-get="{{ url_for('lab.edit_specimen_container_item', test_id=sc.lab_test_id, container_item_id=sc.id) }}"
+                               hx-target="#specimenContainerModal"
+                               hx-swap="innerHTML"
+                            >
+                            <span class="icon">
+                                <i class="fas fa-pencil-alt"></i>
+                            </span>
+                            </a>
+                        </td>
                         </tr>
                     {% endfor %}
                     </tbody>
