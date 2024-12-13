@@ -271,6 +271,7 @@ class LabTest(db.Model):
     profiles = db.relationship(LabTestProfile,
                                secondary=test_profile_assoc,
                                backref=db.backref('tests'))
+    tat = db.Column('tat', db.String(), info={'label': 'Turn-Around-Time'})
 
     def __str__(self):
         return self.name
@@ -306,7 +307,7 @@ class LabSpecimenContainerItem(db.Model):
     lab_test_id = db.Column('lab_test_id', db.ForeignKey('lab_tests.id'))
     lab_specimen_container_id = db.Column('lab_specimen_container_id', db.ForeignKey('lab_specimen_containers.id'))
     volume = db.Column('volume', db.Numeric(), info={'label': 'Volume'})
-    note = db.Column('note', db.Text())
+    note = db.Column('note', db.Text(), info={'label': 'Note'})
     test = db.relationship(LabTest, backref=db.backref('specimen_container_items', cascade='all, delete-orphan'))
     specimen_container = db.relationship(LabSpecimenContainer,
                                          backref=db.backref('specimen_container_items', cascade='all, delete-orphan'))

@@ -6,7 +6,7 @@ from wtforms.fields.core import FormField, FieldList
 from wtforms.widgets import Select
 from wtforms.validators import InputRequired, Optional
 from wtforms_alchemy import model_form_factory, QuerySelectField
-from wtforms_alchemy.fields import QuerySelectField, QuerySelectMultipleField
+from wtforms_alchemy.fields import QuerySelectField, QuerySelectMultipleField, ModelFormField, ModelFieldList
 
 from .models import *
 from app import db
@@ -37,27 +37,36 @@ class ChoiceItemForm(FlaskForm):
     ref = BooleanField('Is this a reference value?')
 
 
-class LabSpecimenContainerItemForm(ModelForm):
-    class Meta:
-        model = LabSpecimenContainerItem
+def create_lab_specimen_container_item_form(lab_id):
+    class LabSpecimenContainerItemForm(ModelForm):
+        class Meta:
+            model = LabSpecimenContainerItem
 
-    specimen_container = QuerySelectField('Container',
-                                          allow_blank=True,
-                                          blank_text='Select container',
-                                          query_factory=lambda: LabSpecimenContainer.query.filter_by(lab_id=session.get('lab_id')))
+        specimen_container = QuerySelectField('Container',
+                                              allow_blank=True,
+                                              blank_text='Select container',
+                                              query_factory=lambda: LabSpecimenContainer.query.filter_by(lab_id=lab_id))
+
+    return LabSpecimenContainerItemForm
 
 
-class LabTestForm(ModelForm):
-    class Meta:
-        model = LabTest
+def create_lab_test_form(lab_id):
+    LabSpecimenContainerItemForm = create_lab_specimen_container_item_form(lab_id)
 
-    choice_set = QuerySelectField('Choice Set',
-                                  widget=Select(),
-                                  allow_blank=True,
-                                  blank_text='ไม่ใช้ชุดคำตอบ',
-                                  validators=[Optional()]
-                                  )
-    container_item = FormField(LabSpecimenContainerItemForm, default=LabSpecimenContainerItem())
+    class LabTestForm(ModelForm):
+        class Meta:
+            model = LabTest
+
+        choice_set = QuerySelectField('Choice Set',
+                                      widget=Select(),
+                                      allow_blank=True,
+                                      blank_text='ไม่ใช้ชุดคำตอบ',
+                                      validators=[Optional()]
+                                      )
+        specimen_container_items = ModelFieldList(
+            ModelFormField(LabSpecimenContainerItemForm, default=LabSpecimenContainerItem()),
+            min_entries=2)
+    return LabTestForm
 
 
 def create_customer_form(lab_id):
@@ -65,13 +74,15 @@ def create_customer_form(lab_id):
         class Meta:
             model = LabCustomer
             exclude = ['hn']
+
     return LabCustomerForm
 
 
 def create_lab_test_record_form(test, default=None):
     default_choice = LabResultChoiceItem.query.filter_by(choice_set_id=test.choice_set_id, result=default).first()
     if default_choice:
-        default_choice = lambda: LabResultChoiceItem.query.filter_by(choice_set_id=test.choice_set_id, result=default).first()
+        default_choice = lambda: LabResultChoiceItem.query.filter_by(choice_set_id=test.choice_set_id,
+                                                                     result=default).first()
 
     class LabTestRecordForm(ModelForm):
         class Meta:
