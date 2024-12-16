@@ -248,9 +248,9 @@ def edit_physical_exam_record(order_id):
     return render_template('lab/modals/physical_exam_form.html', form=form, order=order)
 
 
+@lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
 @lab.route('/tests/<int:test_id>/specimens/container-items/<int:container_item_id>/edit',
            methods=['GET', 'DELETE', 'PUT'])
-@lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
 @login_required
 def edit_specimen_container_item(test_id, container_item_id=None):
     test = LabTest.query.get(test_id)
@@ -270,25 +270,25 @@ def edit_specimen_container_item(test_id, container_item_id=None):
                 _item.lab_test_id = test_id
                 db.session.add(_item)
                 db.session.commit()
-                template = f'''
-                <tr>
-                <td>{_item.specimen_container}</td>
-                <td>{_item.volume}</td>
-                <td>{_item.note}</td>
-                <td>
-                    <a hx-get="{ url_for('lab.edit_specimen_container_item', test_id=_item.lab_test_id, container_item_id=_item.id) }"
-                       hx-target="#specimenContainerModal"
-                       hx-swap="innerHTML"
-                    >
-                    <span class="icon">
-                        <i class="fas fa-pencil-alt"></i>
-                    </span>
-                    </a>
-                </td>
-                </tr>
-                '''
-                resp = make_response(template)
-                resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+                # template = f'''
+                # <tr id="container-item-{_item.id}">
+                # <td>{_item.specimen_container}</td>
+                # <td>{_item.volume}</td>
+                # <td>{_item.note}</td>
+                # <td>
+                #     <a hx-get="{ url_for('lab.edit_specimen_container_item', test_id=_item.lab_test_id, container_item_id=_item.id) }"
+                #        hx-target="#specimenContainerModal"
+                #        hx-swap="innerHTML"
+                #     >
+                #     <span class="icon">
+                #         <i class="fas fa-pencil-alt"></i>
+                #     </span>
+                #     </a>
+                # </td>
+                # </tr>
+                # '''
+                resp = make_response()
+                resp.headers['HX-Refresh'] = 'true'
                 return resp
         else:
             print(form.errors)
@@ -304,7 +304,7 @@ def edit_specimen_container_item(test_id, container_item_id=None):
             db.session.add(container_item)
             db.session.commit()
             template = f'''
-                    <tr>
+                    <tr id="container-item-{container_item.id}">
                     <td>{container_item.specimen_container}</td>
                     <td>{container_item.volume}</td>
                     <td>{container_item.note}</td>
