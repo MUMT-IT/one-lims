@@ -34,9 +34,221 @@ from collections import namedtuple, defaultdict
 
 from ..auth.models import UserCheckinRecord
 
+from dotenv import load_dotenv
+import requests
+import json
+# โหลดค่าใน .env
+load_dotenv()
+
+# Defining the host is optional and defaults to https://openapi.flowaccount.com/v1
+
+
+
 TestOrder = namedtuple('TestOrder', ['order', 'ordered_at', 'type', 'approved_at'])
 
 fake = Faker(['th-TH'])
+
+import openapi_client
+from openapi_client.rest import ApiException
+from pprint import pprint
+
+configuration = openapi_client.Configuration(
+    host="https://openapi.flowaccount.com/v1"
+)
+
+
+def get_access_token():
+    """
+    Request access token from FlowAccount API using credentials from .env file.
+    """
+    url = "https://openapi.flowaccount.com/test/token?Content-Type=application/x-www-form-urlencoded"
+
+    # ดึงค่าจาก .env
+
+
+
+    username="ikit.pre@mahidol.edu"
+    password="Sandbox-00"
+    client_id="likit-sandbox-client"
+    client_secret="bGlraXQtc2FuZGJveC1jbGllbnQtMDUvMTEvMjAyNA=="
+    grant_type="client_credentials"
+    scope="flowaccount-api"
+    # ตรวจสอบว่าข้อมูลสำคัญมีครบ
+    if not all([username, password, client_id, client_secret, grant_type, scope]):
+        raise ValueError("Missing required environment variables for FlowAccount API")
+
+    # เตรียม payload
+    payload = (
+        f"username={username}&"
+        f"password={password}&"
+        f"client_id={client_id}&"
+        f"client_secret={client_secret}&"
+        f"grant_type={grant_type}&"
+        f"scope={scope}"
+    )
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    # ส่งคำขอเพื่อรับ access token
+    response = requests.post(url, headers=headers, data=payload)
+
+    if response.status_code == 200:
+        token_data = response.json()
+        return token_data["access_token"]
+    else:
+        raise Exception(f"Failed to get access token: {response.text}")
+
+
+# @lab.route('/<int:lab_id>/receipts/<int:order_id>', methods=['POST'])
+def send_receipts_with_payment_post(order_id):
+    # รับ token จากฟังก์ชัน
+
+    access_token = f"Bearer {get_access_token()}"
+    print(f'{access_token}')
+
+    # รับข้อมูลจากฟอร์ม
+
+    # ตัวอย่างค่าตัวแปร
+    company_name = "บริษัท ตัวอย่าง จำกัด"
+    company_name_en = "Example Co., Ltd."
+    company_address = "123 หมู่ 1 ตำบลตัวอย่าง อำเภอเมือง จังหวัดตัวอย่าง"
+    company_address_en = "123 Moo 1, Example Subdistrict, Muang District, Example Province"
+    company_tax_id = "1234567890123"
+    company_branch = "สำนักงานใหญ่"
+    company_branch_en = "Head Office"
+    company_phone = "02-123-4567"
+    company_mobile = "099-999-9999"
+    contact_code = "001"
+    contact_name = "บริษัท ลูกค้า จำกัด, คุณลูกค้า ซื้อประจำ"
+    contact_address = "123/456 หมู่ 2 ตำบลลูกค้า อำเภอตัวอย่าง จังหวัดตัวอย่าง"
+    contact_tax_id = "1234567890123"
+    contact_branch = "สำนักงาน/สาขา"
+    contact_person = "ลูกค้า"
+    contact_email = "contact@email.com"
+    contact_number = "099-999-9999"
+    contact_zip_code = "12345"
+    contact_group = 1
+    published_on = "2024-12-23"
+    credit_type = 3
+    credit_days = 0
+    due_date = "2024-12-23"
+    sales_name = "พนักงาน ขายหน้าร้าน"
+    project_name = "project A"
+    reference = ""
+    is_vat_inclusive = False
+    use_receipt_deduction = False
+    sub_total = 1000.0
+    discount_percentage = 0
+    discount_amount = 0
+    total_after_discount = 1000.0
+    is_vat = False
+    vat_amount = 0
+    grand_total = 1000.0
+    remarks = "ตัวอย่างหมายเหตุ"
+    internal_notes = "บันทึกภายใน"
+    show_signature_or_stamp = True
+    document_reference = [
+        {
+            "recordId": 1,
+            "referenceDocumentSerial": "INV0001",
+            "referenceDocumentType": 7
+        }
+    ]
+    items = [
+        {
+            "type": 1,
+            "name": "Service A",
+            "description": "ค่าบริการตัวอย่าง",
+            "quantity": 2,
+            "unitName": "บริการ",
+            "pricePerUnit": 500.0,
+            "total": 1000.0,
+            "sellChartOfAccountCode": "41210",
+            "buyChartOfAccountCode": ""
+        }
+    ]
+    document_payment_structure_type = "UpgradeSimpleDocumentWithPaymentReceivingCash"
+    payment_method = 1
+    payment_date = "2024-12-23"
+    collected = 1000.0
+    payment_deduction_type = 0
+    payment_deduction_amount = 0
+    withheld_percentage = 0
+    withheld_amount = 0
+    payment_remarks = "ชำระครบถ้วน"
+    remaining_collected_type = 0
+    remaining_collected = 0
+
+
+    payload = {
+        "companyName": company_name,
+        "companyNameEn": company_name_en,
+        "companyAddress": company_address,
+        "companyAddressEn": company_address_en,
+        "companyTaxId": company_tax_id,
+        "companyBranch": company_branch,
+        "companyBranchEn": company_branch_en,
+        "companyPhone": company_phone,
+        "companyMobile": company_mobile,
+        "contactCode": contact_code,
+        "contactName": contact_name,
+        "contactAddress": contact_address,
+        "contactTaxId": contact_tax_id,
+        "contactBranch": contact_branch,
+        "contactPerson": contact_person,
+        "contactEmail": contact_email,
+        "contactNumber": contact_number,
+        "contactZipCode": contact_zip_code,
+        "contactGroup": contact_group,
+        "publishedOn": published_on,
+        "creditType": credit_type,
+        "creditDays": credit_days,
+        "dueDate": due_date,
+        "salesName": sales_name,
+        "projectName": project_name,
+        "reference": reference,
+        "isVatInclusive": is_vat_inclusive,
+        "useReceiptDeduction": use_receipt_deduction,
+        "subTotal": sub_total,
+        "discountPercentage": discount_percentage,
+        "discountAmount": discount_amount,
+        "totalAfterDiscount": total_after_discount,
+        "isVat": is_vat,
+        "vatAmount": vat_amount,
+        "grandTotal": grand_total,
+        "remarks": remarks,
+        "internalNotes": internal_notes,
+        "showSignatureOrStamp": show_signature_or_stamp,
+        "documentReference": document_reference,
+        "items": items,
+        "documentPaymentStructureType": document_payment_structure_type,
+        "paymentMethod": payment_method,
+        "paymentDate": payment_date,
+        "collected": collected,
+        "paymentDeductionType": payment_deduction_type,
+        "paymentDeductionAmount": payment_deduction_amount,
+        "withheldPercentage": withheld_percentage,
+        "withheldAmount": withheld_amount,
+        "paymentRemarks": payment_remarks,
+        "remainingCollectedType": remaining_collected_type,
+        "remainingCollected": remaining_collected
+    }
+
+    # เรียกใช้ API
+    url = "https://openapi.flowaccount.com/test/upgrade/receipts/with-payment"
+    headers = {
+        "Authorization": f"{access_token}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+    if response.status_code == 200:
+        api_response = response.json()
+        print({"success": True, "data": api_response})
+    else:
+        print({"success": False, "error": response.text}, response.status_code)
 
 
 @lab.route('/<int:lab_id>')
@@ -898,6 +1110,9 @@ def edit_payment_record(order_id):
             record.order = order
             db.session.add(record)
             db.session.commit()
+
+            send_receipts_with_payment_post(order_id)
+
             flash('Payment record has been saved.', 'success')
         else:
             flash(f'An error occurred. {form.errors}', 'danger')
