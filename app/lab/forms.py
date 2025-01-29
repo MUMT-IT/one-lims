@@ -2,7 +2,7 @@ from flask import session
 from flask_wtf import FlaskForm, Form
 from wtforms import BooleanField, StringField, TextField, DecimalField, SelectField
 from wtforms.fields import BooleanField
-from wtforms.fields.core import FormField, FieldList
+from wtforms import FormField, FieldList
 from wtforms.widgets import Select
 from wtforms.validators import InputRequired, Optional
 from wtforms.widgets.core import CheckboxInput, ListWidget
@@ -96,6 +96,17 @@ def create_lab_test_record_form(test, default=None):
                                       validators=[Optional()])
 
     return LabTestRecordForm
+
+
+def create_lab_test_profile_record_form(order):
+    class LabTestProfileRecordForm(FlaskForm):
+        code_list = order.split(',')
+        field_list = []
+        for code in code_list:
+            test = LabTest.query.filter_by(code=code).first()
+            form = create_lab_test_record_form(test)
+            vars()[code] = FormField(form)
+    return LabTestProfileRecordForm
 
 
 class LabOrderRejectRecordForm(ModelForm):

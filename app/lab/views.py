@@ -1360,3 +1360,17 @@ def add_test_profile(lab_id, profile_id=None):
         else:
             return redirect(url_for('lab.test_profiles', lab_id=lab_id))
     return render_template('lab/test_profile_form.html', form=form, lab_id=lab_id)
+
+
+@lab.route('/labs/<int:lab_id>/profiles/<int:profile_id>/test-records', methods=['GET', 'POST'])
+@login_required
+def edit_test_profile_record(lab_id, profile_id):
+    profile = LabTestProfile.query.get(profile_id)
+    LabTestProfileRecordForm = create_lab_test_profile_record_form(profile.test_order)
+    code_names = profile.test_order.split(',')
+    form = LabTestProfileRecordForm()
+    for field in form:
+        print(field.name)
+    return render_template('lab/test_profile_record_form.html',
+                           form=form, lab_id=lab_id, profile=profile, code_names=code_names)
+

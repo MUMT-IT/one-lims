@@ -418,6 +418,7 @@ class LabTestRecord(db.Model):
                                backref=db.backref('received_test_records'),
                                foreign_keys=[receiver_id])
     profile_id = db.Column('profile_id', db.ForeignKey('lab_test_profiles.id'))
+    profile = db.relationship(LabTestProfile)
 
     @property
     def is_active(self):

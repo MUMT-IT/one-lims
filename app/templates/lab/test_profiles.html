@@ -49,6 +49,15 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <div class="buttons is-centered">
+                    <a href="{{ url_for('lab.landing', lab_id=lab_id) }}"
+                       class="button is-light is-rounded">
+                <span class="icon">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                        <span>Back</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
