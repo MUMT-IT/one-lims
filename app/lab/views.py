@@ -109,14 +109,14 @@ def add_choice_item(lab_id, choice_set_id, choice_item_id=None):
             form.populate_obj(item)
             item.choice_set_id = choice_set_id
             db.session.add(item)
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added result choice item',
-                detail=item.result,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=lab_id,
+            #     actor=current_user,
+            #     message='Added result choice item',
+            #     detail=item.result,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
+            # db.session.add(activity)
             db.session.commit()
             flash('New choice has been added.', 'success')
         else:
@@ -154,14 +154,14 @@ def add_choice_set(lab_id, choice_set_id=None):
             form.populate_obj(choice_set)
             choice_set.lab_id = lab_id
             db.session.add(choice_set)
-            activity = LabActivity(
-                lab_id=lab_id,
-                message='Added a new choice set',
-                detail=choice_set.name,
-                added_at=arrow.now('Asia/Bangkok').datetime,
-                actor=current_user
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=lab_id,
+            #     message='Added a new choice set',
+            #     detail=choice_set.name,
+            #     added_at=arrow.now('Asia/Bangkok').datetime,
+            #     actor=current_user
+            # )
+            # db.session.add(activity)
             db.session.commit()
             flash('New choice set has been added.', 'success')
         else:
@@ -309,7 +309,7 @@ def edit_specimen_container_item(test_id, container_item_id=None):
                     <td>{container_item.volume}</td>
                     <td>{container_item.note}</td>
                     <td>
-                        <a hx-get="{ url_for('lab.edit_specimen_container_item', test_id=container_item.lab_test_id, container_item_id=container_item.id) }"
+                        <a hx-get="{url_for('lab.edit_specimen_container_item', test_id=container_item.lab_test_id, container_item_id=container_item.id)}"
                            hx-target="#specimenContainerModal"
                            hx-swap="innerHTML"
                         >
@@ -470,14 +470,14 @@ def add_random_patients(lab_id):
                 title=title,
                 lab=lab
             )
-        activity = LabActivity(
-            lab_id=lab_id,
-            actor=current_user,
-            message='Added random customers',
-            detail=customer_.fullname,
-            added_at=arrow.now('Asia/Bangkok').datetime
-        )
-        db.session.add(activity)
+        # activity = LabActivity(
+        #     lab_id=lab_id,
+        #     actor=current_user,
+        #     message='Added random customers',
+        #     detail=customer_.fullname,
+        #     added_at=arrow.now('Asia/Bangkok').datetime
+        # )
+        # db.session.add(activity)
         db.session.commit()
         flash('New random customers have been added.', 'success')
         resp = make_response()
@@ -502,15 +502,15 @@ def add_test_order(lab_id, customer_id, order_id=None):
         for rec in order.test_records:
             rec.cancelled = True
             db.session.add(rec)
-        activity = LabActivity(
-            lab_id=lab_id,
-            actor=current_user,
-            message='Cancelled an order.',
-            detail=order.id,
-            added_at=arrow.now('Asia/Bangkok').datetime
-        )
+        # activity = LabActivity(
+        #     lab_id=lab_id,
+        #     actor=current_user,
+        #     message='Cancelled an order.',
+        #     detail=order.id,
+        #     added_at=arrow.now('Asia/Bangkok').datetime
+        # )
         db.session.add(order)
-        db.session.add(activity)
+        # db.session.add(activity)
         db.session.commit()
         resp = make_response()
         resp.headers['HX-Refresh'] = 'true'
@@ -589,7 +589,19 @@ def print_order_barcode(order_id):
         _text = f'{code} {order.ordered_at.strftime("%m/%d/%Y")}'
         EAN13(code, writer=SVGWriter()).write(rv, {'module_height': 8.0, 'module_width': 0.3}, text=_text)
         barcodes.append((order, rv.getvalue().decode('utf-8')))
-    return render_template('lab/order_barcode.html', barcodes=barcodes, order=order)
+
+    docdef = {
+        'pageSize': {'width': 200, 'height': 200},
+        'pageMargins': [0, 0, 0, 0],
+        'pageOrientation': 'portrait',
+        'content': [
+            {'text': 'HN09099900'},
+            {'text': 'Jane Doe'},
+            {'text': '2/12/2024 10:34:45'}
+        ]
+    }
+    return render_template('lab/order_barcode.html',
+                           barcodes=barcodes, order=order, docdef=docdef)
 
 
 @lab.route('/<int:lab_id>/patients/<int:customer_id>/auto-orders', methods=['POST'])
@@ -658,16 +670,16 @@ def auto_add_test_order(lab_id, customer_id):
             approved_at=approve_datetime.datetime,
             approver=approver.user,
         )
-        activity = LabActivity(
-            lab_id=lab_id,
-            actor=current_user,
-            message='Added an order.',
-            detail=order.id,
-            added_at=arrow.now('Asia/Bangkok').datetime
-        )
+        # activity = LabActivity(
+        #     lab_id=lab_id,
+        #     actor=current_user,
+        #     message='Added an order.',
+        #     detail=order.id,
+        #     added_at=arrow.now('Asia/Bangkok').datetime
+        # )
         flash('New order has been added automatically.', 'success')
         db.session.add(order)
-        db.session.add(activity)
+        # db.session.add(activity)
         db.session.commit()
         resp = make_response()
         resp.headers['HX-Refresh'] = 'true'
@@ -685,15 +697,15 @@ def list_test_orders(lab_id):
 @login_required
 def cancel_test_record(record_id):
     record = LabTestRecord.query.get(record_id)
-    activity = LabActivity(
-        lab_id=record.order.lab_id,
-        actor=current_user,
-        message='Cancelled the test order.',
-        detail=record.id,
-        added_at=arrow.now('Asia/Bangkok').datetime
-    )
+    # activity = LabActivity(
+    #     lab_id=record.order.lab_id,
+    #     actor=current_user,
+    #     message='Cancelled the test order.',
+    #     detail=record.id,
+    #     added_at=arrow.now('Asia/Bangkok').datetime
+    # )
     record.cancelled = True
-    db.session.add(activity)
+    # db.session.add(activity)
     db.session.commit()
     flash('The test has been cancelled.', 'success')
 
@@ -718,14 +730,14 @@ def reject_test_order(record_id):
             record.cancelled = True
             db.session.add(record)
             db.session.add(new_record)
-            activity = LabActivity(
-                lab_id=record.order.lab_id,
-                actor=current_user,
-                message='Rejected and cancelled the test order.',
-                detail=record.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=record.order.lab_id,
+            #     actor=current_user,
+            #     message='Rejected and cancelled the test order.',
+            #     detail=record.id,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
+            # db.session.add(activity)
             db.session.commit()
             flash('The test has been rejected.', 'success')
             return redirect(url_for('lab.show_customer_test_records', customer_id=record.order.customer.id,
@@ -742,14 +754,14 @@ def receive_test_order(record_id):
     record.received_at = arrow.now('Asia/Bangkok').datetime
     record.receiver = current_user
     db.session.add(record)
-    activity = LabActivity(
-        lab_id=record.order.lab_id,
-        actor=current_user,
-        message='Received the test.',
-        detail=record.id,
-        added_at=arrow.now('Asia/Bangkok').datetime
-    )
-    db.session.add(activity)
+    # activity = LabActivity(
+    #     lab_id=record.order.lab_id,
+    #     actor=current_user,
+    #     message='Received the test.',
+    #     detail=record.id,
+    #     added_at=arrow.now('Asia/Bangkok').datetime
+    # )
+    # db.session.add(activity)
     db.session.commit()
     flash('The order has been received.', 'success')
     return redirect(url_for('lab.show_customer_test_records',
@@ -814,16 +826,16 @@ def finish_test_record(order_id, record_id):
             rec.updater = current_user
             if form.choice_set.data:
                 rec.text_result = form.choice_set.data.result
-            activity = LabActivity(
-                lab_id=order.lab_id,
-                actor=current_user,
-                message='Added the result for a test record.',
-                detail=rec.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
+            # activity = LabActivity(
+            #     lab_id=order.lab_id,
+            #     actor=current_user,
+            #     message='Added the result for a test record.',
+            #     detail=rec.id,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
             order.finished_at = arrow.now('Asia/Bangkok').datetime
             db.session.add(rec)
-            db.session.add(activity)
+            # db.session.add(activity)
             db.session.commit()
             flash('New result record has been saved.', 'success')
             return redirect(url_for('lab.show_customer_test_records', order_id=order_id, customer_id=order.customer.id))
@@ -840,14 +852,14 @@ def approve_test_order(order_id):
         if order.approved_at:
             order.approved_at = None
             order.approver = None
-            activity = LabActivity(
-                lab_id=order.lab_id,
-                actor=current_user,
-                message='Cancelled the approval for an order',
-                detail=order.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=order.lab_id,
+            #     actor=current_user,
+            #     message='Cancelled the approval for an order',
+            #     detail=order.id,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
+            # db.session.add(activity)
     else:
         order.approved_at = arrow.now('Asia/Bangkok').datetime
         order.approver = current_user
@@ -962,7 +974,6 @@ def preview_report(order_id):
 def print_report(order_id):
     order = LabTestOrder.query.get(order_id)
     return render_template('lab/lab_report_print.html', order=order)
-
 
 
 @lab.route('/requests/<int:order_id>/preview', methods=['GET', 'POST'])
@@ -1311,3 +1322,41 @@ def geo_checkin(lab_id):
                             'time': now.isoformat(),
                             })
     return render_template('lab/geo_checkin.html', lab=lab)
+
+
+@lab.route('/labs/<int:lab_id>/test-profiles', methods=['GET', 'POST'])
+@login_required
+def test_profiles(lab_id):
+    profiles = LabTestProfile.query.filter_by(lab_id=lab_id, active=True)
+    return render_template('lab/test_profiles.html', test_profiles=profiles, lab_id=lab_id)
+
+
+@lab.route('/labs/<int:lab_id>/add-test-profile', methods=['GET', 'POST'])
+@lab.route('/labs/<int:lab_id>/profiles/<int:profile_id>', methods=['GET', 'POST'])
+@login_required
+def add_test_profile(lab_id, profile_id=None):
+    TestProfileForm = create_lab_test_profile_form(lab_id)
+    if not profile_id:
+        form = TestProfileForm()
+    else:
+        profile = LabTestProfile.query.get(profile_id)
+        form = TestProfileForm(obj=profile)
+    if form.validate_on_submit():
+        if not profile_id:
+            profile = LabTestProfile(lab_id=lab_id)
+        form.populate_obj(profile)
+        db.session.add(profile)
+        db.session.commit()
+        if not profile_id:
+            flash('New test profile has been added.', 'success')
+        else:
+            flash('The test profile has been updated.', 'success')
+
+        # handle boosted request
+        if request.headers.get('HX-Request') == 'true':
+            resp = make_response()
+            resp.headers['HX-Redirect'] = url_for('lab.test_profiles', lab_id=lab_id)
+            return resp
+        else:
+            return redirect(url_for('lab.test_profiles', lab_id=lab_id))
+    return render_template('lab/test_profile_form.html', form=form, lab_id=lab_id)

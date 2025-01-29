@@ -6,6 +6,7 @@
         <div class="tabs is-centered is-boxed">
             <ul>
                 <li class="is-active"><a>Tests</a></li>
+                <li><a href="{{ url_for('lab.test_profiles', lab_id=lab.id) }}">Profiles</a></li>
                 <li><a href="{{ url_for('lab.list_choice_sets', lab_id=lab.id) }}">Result Choice Sets</a></li>
             </ul>
         </div>

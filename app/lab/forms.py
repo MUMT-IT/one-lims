@@ -5,6 +5,7 @@ from wtforms.fields import BooleanField
 from wtforms.fields.core import FormField, FieldList
 from wtforms.widgets import Select
 from wtforms.validators import InputRequired, Optional
+from wtforms.widgets.core import CheckboxInput, ListWidget
 from wtforms_alchemy import model_form_factory, QuerySelectField
 from wtforms_alchemy.fields import QuerySelectField, QuerySelectMultipleField, ModelFormField, ModelFieldList
 
@@ -118,3 +119,15 @@ class LabPaymentRecordForm(ModelForm):
     class Meta:
         model = LabOrderPaymentRecord
         exclude = ['created_at', 'expired_at', 'payment_datetime']
+
+
+def create_lab_test_profile_form(lab_id):
+    class LabTestProfileForm(ModelForm):
+        class Meta:
+            model = LabTestProfile
+
+        tests = QuerySelectMultipleField('Tests',
+                                         query_factory=lambda: LabTest.query.filter_by(lab_id=lab_id),
+                                         widget=ListWidget(prefix_label=False),
+                                         option_widget=CheckboxInput())
+    return LabTestProfileForm
