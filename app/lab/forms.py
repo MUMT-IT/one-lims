@@ -91,9 +91,11 @@ def create_lab_test_record_form(test, default=None):
 
         choice_set = QuerySelectField('Result choices',
                                       query_factory=lambda: [] if not test.choice_set else test.choice_set.choice_items,
-                                      allow_blank=False,
+                                      allow_blank=True,
+                                      blank_text='Please select',
                                       default=default_choice,
                                       validators=[Optional()])
+        numeric = BooleanField('Numeric Result', default=True if test.data_type == "Numeric" else False)
 
     return LabTestRecordForm
 

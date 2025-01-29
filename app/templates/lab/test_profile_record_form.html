@@ -9,9 +9,9 @@
             </div>
         </div>
         <div class="columns">
-            <div class="column has-text-centered is-two-thirds is-offset-2">
+            <div class="column">
             <h1 class="title">Add Lab Result</h1>
-                <form method="post" class="box">
+                <form method="post">
                     {{ form.hidden_tag() }}
 {#                    <div class="field is-horizontal">#}
 {#                        <div class="field-label is-normal">#}
@@ -39,18 +39,33 @@
 {#                    </div>#}
                     {% for form_field in form %}
                         {% if form_field.name in code_names %}
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label">Test</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <div class="control">
-                                    <input type="text" class="input" disabled value="{{ form_field.name }}">
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">{{ form_field.name }}</label>
+                            </div>
+                            <div class="field-body">
+                                {% if form_field.numeric.data %}
+                                <div class="field">
+                                    <div class="control">
+                                        {{ form_field.num_result(class="input", placeholder="Result") }}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="field is-expanded">
+                                    <div class="control is-expanded">
+                                        <div class="select is-fullwidth">
+                                            {{ form_field.choice_set() }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="field">
+                                    <div class="control">
+                                        {{ form_field.comment(class="input", placeholder="Comment") }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 {#                    <div class="field is-horizontal">#}
 {#                        <div class="field-label is-normal">#}
 {#                            <label class="label">Ordered At</label>#}
@@ -63,59 +78,7 @@
 {#                            </div>#}
 {#                        </div>#}
 {#                    </div>#}
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label">{{ form_field.choice_set.label }}</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field is-expanded">
-                                <div class="control is-expanded">
-                                    <div class="select">
-                                        {{ form_field.choice_set() }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-{#                    {% if rec.test.data_type == 'Numeric' %}#}
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label">{{ form_field.num_result.label }}</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <div class="control">
-                                    {{ form_field.num_result(class="input") }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-{#                    {% elif rec.test.data_type == 'Text' %}#}
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label">{{ form_field.text_result.label }}</label>
-                            </div>
-                            <div class="field-body">
-                                <div class="field">
-                                    <div class="control">
-                                        {{ form_field.text_result(class="input") }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 {#                    {% endif %}#}
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label">{{ form_field.comment.label }}</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <div class="control">
-                                    {{ form_field.comment(class="textarea") }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                         {% endif %}
                     {% endfor %}
                     <div class="field is-horizontal">
