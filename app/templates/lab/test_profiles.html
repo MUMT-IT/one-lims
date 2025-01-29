@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section class="section">
+    <div class="container">
+        <div class="tabs is-centered is-boxed">
+            <ul>
+                <li><a href="{{ url_for('lab.list_tests', lab_id=lab_id) }}">Tests</a></li>
+                <li><a href="{{ url_for('lab.test_profiles', lab_id=lab_id) }}">Profiles</a></li>
+                <li class="is-active"><a>Result Choice Sets</a></li>
+            </ul>
+        </div>
+        <div class="columns">
+            <div class="column">
+                {% include "messages.html" %}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="buttons is-right">
+                    <a class="button is-success is-rounded"
+                        href="{{ url_for('lab.add_test_profile', lab_id=lab_id) }}">
+                        <span class="icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </span>
+                        <span>Add Profile</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <table class="table is-fullwidth">
+                    <thead>
+                    <th>Name</th>
+                    <th colspan="2">Tests</th>
+                    </thead>
+                    <tbody>
+                        {% for profile in test_profiles %}
+                            <tr>
+                                <td>{{ profile.name }}</td>
+                                <td>{{ profile.test_order }}</td>
+                                <td>
+                                    <a href="{{ url_for('lab.add_test_profile', lab_id=profile.lab_id, profile_id=profile.id) }}" class="button is-info">
+                                        <span>edit</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="buttons is-centered">
+                    <a href="{{ url_for('lab.landing', lab_id=lab_id) }}"
+                       class="button is-light is-rounded">
+                <span class="icon">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                        <span>Back</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    </section>
+{% endblock %}

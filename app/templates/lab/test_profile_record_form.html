@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                {% include "messages.html" %}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column has-text-centered is-two-thirds is-offset-2">
+            <h1 class="title">Add Lab Result</h1>
+                <form method="post" class="box">
+                    {{ form.hidden_tag() }}
+{#                    <div class="field is-horizontal">#}
+{#                        <div class="field-label is-normal">#}
+{#                            <label class="label">H.N.</label>#}
+{#                        </div>#}
+{#                        <div class="field-body">#}
+{#                            <div class="field">#}
+{#                                <div class="control">#}
+{#                                    <input type="text" class="input" disabled value="{{ order.customer.id }}">#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="field is-horizontal">#}
+{#                        <div class="field-label is-normal">#}
+{#                            <label class="label">Name</label>#}
+{#                        </div>#}
+{#                        <div class="field-body">#}
+{#                            <div class="field">#}
+{#                                <div class="control">#}
+{#                                    <input type="text" class="input" disabled value="{{ order.customer.fullname }}">#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+                    {% for form_field in form %}
+                        {% if form_field.name in code_names %}
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label">Test</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <div class="control">
+                                    <input type="text" class="input" disabled value="{{ form_field.name }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+{#                    <div class="field is-horizontal">#}
+{#                        <div class="field-label is-normal">#}
+{#                            <label class="label">Ordered At</label>#}
+{#                        </div>#}
+{#                        <div class="field-body">#}
+{#                            <div class="field">#}
+{#                                <div class="control">#}
+{#                                    <input type="text" class="input" disabled value="{{ order.ordered_at|humanizedt }}">#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label">{{ form_field.choice_set.label }}</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field is-expanded">
+                                <div class="control is-expanded">
+                                    <div class="select">
+                                        {{ form_field.choice_set() }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+{#                    {% if rec.test.data_type == 'Numeric' %}#}
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label">{{ form_field.num_result.label }}</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <div class="control">
+                                    {{ form_field.num_result(class="input") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+{#                    {% elif rec.test.data_type == 'Text' %}#}
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">{{ form_field.text_result.label }}</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <div class="control">
+                                        {{ form_field.text_result(class="input") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+{#                    {% endif %}#}
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label">{{ form_field.comment.label }}</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <div class="control">
+                                    {{ form_field.comment(class="textarea") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label"></label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field is-grouped">
+{#                                <div class="control">#}
+{#                                    <a class="button is-light" href="{{ url_for('lab.show_customer_test_records', customer_id=order.customer.id, order_id=order.id) }}">Cancel</a>#}
+{#                                </div>#}
+                                <div class="control">
+                                    <button class="button is-success" type="submit">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

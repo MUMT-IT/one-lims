@@ -234,9 +234,15 @@ class LabTestProfile(db.Model):
     name = db.Column('name', db.String(), nullable=False, info={'label': 'Name'})
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('test_profiles', cascade='all, delete-orphan'))
+    active = db.Column('active', db.Boolean(), default=True)
+    test_order = db.Column('test_order', db.Text(), info={'label': 'Test Order'})
 
     def __str__(self):
         return self.name
+
+    @property
+    def tests_list(self):
+        return ', '.join([t.code for t in self.tests])
 
     @property
     def price(self):
@@ -274,7 +280,7 @@ class LabTest(db.Model):
     tat = db.Column('tat', db.String(), info={'label': 'Turn-Around-Time'})
 
     def __str__(self):
-        return self.name
+        return f'{self.name} ({self.code})'
 
     @property
     def reference_values(self):
@@ -412,6 +418,7 @@ class LabTestRecord(db.Model):
                                backref=db.backref('received_test_records'),
                                foreign_keys=[receiver_id])
     profile_id = db.Column('profile_id', db.ForeignKey('lab_test_profiles.id'))
+    profile = db.relationship(LabTestProfile)
 
     @property
     def is_active(self):
