@@ -1362,15 +1362,60 @@ def add_test_profile(lab_id, profile_id=None):
     return render_template('lab/test_profile_form.html', form=form, lab_id=lab_id)
 
 
-@lab.route('/labs/<int:lab_id>/profiles/<int:profile_id>/test-records', methods=['GET', 'POST'])
+@lab.route('/orders/<int:order_id>/profiles/<int:profile_id>/test-records', methods=['GET', 'POST'])
 @login_required
-def edit_test_profile_record(lab_id, profile_id):
+def edit_test_profile_record(order_id, profile_id):
+    order = LabTestOrder.query.get(order_id)
     profile = LabTestProfile.query.get(profile_id)
     LabTestProfileRecordForm = create_lab_test_profile_record_form(profile.test_order)
     code_names = profile.test_order.split(',')
     form = LabTestProfileRecordForm()
-    for field in form:
-        print(field.name)
+    if request.method == 'GET':
+        for field in form:
+            if field.name not in code_names:
+                continue
+            test = LabTest.query.filter_by(code=field.name).first()
+            _record = LabTestRecord.query.filter_by(test_id=test.id,
+                                                    order_id=order_id,
+                                                    profile_id=profile_id).first()
+            if _record:
+                if _record.test.choice_set:
+                    for c in _record.test.choice_set.choice_items:
+                        if c.result == _record.text_result:
+                            field.choice_set.data = c
+                    field.text_result.data = ""
+                else:
+                    field.text_result.data = _record.text_result
+                field.num_result.data = _record.num_result
+                field.comment.data = _record.comment
+
+    if form.validate_on_submit():
+        for field in form:
+            if field.name not in code_names:
+                continue
+            test = LabTest.query.filter_by(code=field.name).first()
+            _record = LabTestRecord.query.filter_by(test_id=test.id,
+                                                    order_id=order_id,
+                                                    profile_id=profile_id).first()
+            if not _record:
+                _record = LabTestRecord(order=order_id, profile_id=profile_id, test_id=test.id)
+
+            print(field.name, field.numeric.data)
+
+            if field.numeric.data:
+                _record.num_result = field.num_result.data
+            else:
+                if field.choice_set.data:
+                    _record.text_result = field.choice_set.data.result
+                else:
+                    _record.text_result = field.text_result.data
+            _record.comment = field.comment.data
+            _record.updated_at = arrow.now('Asia/Bangkok').datetime
+            _record.updater = current_user
+            db.session.add(_record)
+        db.session.commit()
+        flash("Results have been saved.", "success")
+        return redirect(url_for('lab.show_customer_test_records', order_id=order_id))
     return render_template('lab/test_profile_record_form.html',
-                           form=form, lab_id=lab_id, profile=profile, code_names=code_names)
+                           form=form, order=order, profile=profile, code_names=code_names)
 

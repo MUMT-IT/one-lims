@@ -68,7 +68,7 @@
                             <td>{{ rec.test.name }}</td>
                             <td>
                                 {% if rec.profile %}
-                                <a class="tag" href="{{ url_for('lab.edit_test_profile_record', profile_id=rec.profile.id, lab_id=rec.profile.lab_id) }}">
+                                <a class="tag" href="{{ url_for('lab.edit_test_profile_record', profile_id=rec.profile.id, order_id=rec.order_id) }}">
                                     {{ rec.profile }}
                                 </a>
                                 {% endif %}

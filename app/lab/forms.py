@@ -107,7 +107,7 @@ def create_lab_test_profile_record_form(order):
         for code in code_list:
             test = LabTest.query.filter_by(code=code).first()
             form = create_lab_test_record_form(test)
-            vars()[code] = FormField(form)
+            vars()[code] = FormField(form, default=LabTestRecord)
     return LabTestProfileRecordForm
 
 
