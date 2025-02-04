@@ -26,6 +26,14 @@ customer_medication_assoc = db.Table('customer_medication_assoc',
                                      db.Column('customer_id', db.ForeignKey('lab_customers.id')),
                                      db.Column('drug_id', db.ForeignKey('lab_customer_medications.id')))
 
+lab_test_package_assoc = db.Table('lab_test_package_assoc',
+                                  db.Column('test_id', db.ForeignKey('lab_tests.id')),
+                                  db.Column('package_id', db.ForeignKey('lab_service_packages.id')))
+
+lab_test_profile_package_assoc = db.Table('lab_test_profile_package_assoc',
+                                          db.Column('profile_id', db.ForeignKey('lab_test_profiles.id')),
+                                          db.Column('package_id', db.ForeignKey('lab_service_packages.id')))
+
 class LabHNCount(db.Model):
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     year = db.Column('year', db.Integer, nullable=False)
@@ -96,6 +104,7 @@ class LabCustomerMedication(db.Model):
             'id': self.id,
             'text': self.drug
         }
+
 
 class LabCustomer(db.Model):
     __tablename__ = 'lab_customers'
@@ -525,6 +534,17 @@ class LabOrderPaymentRecord(db.Model):
     order_id = db.Column('order_id', db.Integer, db.ForeignKey('lab_test_orders.id'))
     order = db.relationship(LabTestOrder, backref=db.backref('payments', lazy='dynamic', cascade='all, delete-orphan'))
     creator = db.relationship(User)
+
+
+class LabServicePackage(db.Model):
+    __tablename__ = 'lab_service_packages'
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column('name', db.String(), nullable=False, info={'label': 'ชื่อ'})
+    detail = db.Column('detail', db.Text(), info={'label': 'รายละเอียด'})
+    created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
+    creator_id = db.Column('creator_id', db.ForeignKey('user.id'))
+    expired_at = db.Column('expired_at', db.DateTime(timezone=True))
+    price = db.Column('price', db.Numeric(), info={'label': 'ราคา'})
 
 
 sa.orm.configure_mappers()
