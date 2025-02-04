@@ -144,3 +144,8 @@ def create_lab_test_profile_form(lab_id):
                                          widget=ListWidget(prefix_label=False),
                                          option_widget=CheckboxInput())
     return LabTestProfileForm
+
+
+class LabServicePackageForm(ModelForm):
+    class Meta:
+        model = LabServicePackage

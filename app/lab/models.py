@@ -545,7 +545,7 @@ class LabServicePackage(db.Model):
     creator_id = db.Column('creator_id', db.ForeignKey('user.id'))
     expired_at = db.Column('expired_at', db.DateTime(timezone=True))
     price = db.Column('price', db.Numeric(), info={'label': 'ราคา'})
-    lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
+    lab_id = db.Column('lab_id', db.Integer(), db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('service_packages',
                                                          cascade='all, delete-orphan'))
 
