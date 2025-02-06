@@ -241,6 +241,7 @@ class LabTestProfile(db.Model):
     __tablename__ = 'lab_test_profiles'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     name = db.Column('name', db.String(), nullable=False, info={'label': 'Name'})
+    detail = db.Column('detail', db.Text(), info={'label': 'Detail'})
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('test_profiles', cascade='all, delete-orphan'))
     active = db.Column('active', db.Boolean(), default=True)
@@ -542,12 +543,15 @@ class LabServicePackage(db.Model):
     name = db.Column('name', db.String(), nullable=False, info={'label': 'ชื่อ'})
     detail = db.Column('detail', db.Text(), info={'label': 'รายละเอียด'})
     created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
+    updated_at = db.Column('updated_at', db.DateTime(timezone=True), nullable=True)
     creator_id = db.Column('creator_id', db.ForeignKey('user.id'))
-    expired_at = db.Column('expired_at', db.DateTime(timezone=True))
-    price = db.Column('price', db.Numeric(), info={'label': 'ราคา'})
+    expired_at = db.Column('expired_at', db.DateTime(timezone=True), info={'label': 'วันสิ้นสุด'})
+    price = db.Column('price', db.Numeric(), default=0.0, info={'label': 'ราคา'})
     lab_id = db.Column('lab_id', db.Integer(), db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('service_packages',
                                                          cascade='all, delete-orphan'))
+    tests = db.relationship(LabTest, secondary=lab_test_package_assoc)
+    profiles = db.relationship(LabTestProfile, secondary=lab_test_profile_package_assoc)
 
 
 sa.orm.configure_mappers()
