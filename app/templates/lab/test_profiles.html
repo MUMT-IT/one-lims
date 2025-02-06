@@ -6,8 +6,9 @@
         <div class="tabs is-centered is-boxed">
             <ul>
                 <li><a href="{{ url_for('lab.list_tests', lab_id=lab_id) }}">Tests</a></li>
-                <li><a href="{{ url_for('lab.test_profiles', lab_id=lab_id) }}">Profiles</a></li>
-                <li class="is-active"><a>Result Choice Sets</a></li>
+                <li class="is-active"><a href="{{ url_for('lab.test_profiles', lab_id=lab_id) }}">Profiles</a></li>
+                <li><a href="{{ url_for('lab.list_service_packages', lab_id=lab_id) }}">Service Packages</a></li>
+                <li><a>Result Choice Sets</a></li>
             </ul>
         </div>
         <div class="columns">
@@ -33,16 +34,21 @@
                 <table class="table is-fullwidth">
                     <thead>
                     <th>Name</th>
+                    <th>Detail</th>
                     <th colspan="2">Tests</th>
                     </thead>
                     <tbody>
                         {% for profile in test_profiles %}
                             <tr>
                                 <td>{{ profile.name }}</td>
+                                <td>{{ profile.detail }}</td>
                                 <td>{{ profile.test_order }}</td>
                                 <td>
-                                    <a href="{{ url_for('lab.add_test_profile', lab_id=profile.lab_id, profile_id=profile.id) }}" class="button is-info">
-                                        <span>edit</span>
+                                    <a href="{{ url_for('lab.add_test_profile', lab_id=profile.lab_id, profile_id=profile.id) }}" class="button is-rounded">
+                                        <span class="icon">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </span>
+                                        <span>Edit</span>
                                     </a>
                                 </td>
                             </tr>

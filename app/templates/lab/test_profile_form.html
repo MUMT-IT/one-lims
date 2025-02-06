@@ -19,6 +19,12 @@
                         </div>
                     </div>
                     <div class="field">
+                        <label class="label">{{ form.detail.label }}</label>
+                        <div class="control">
+                            {{ form.detail(class="textarea") }}
+                        </div>
+                    </div>
+                    <div class="field">
                         <label class="checkbox">
                             {{ form.active() }}
                             {{ form.active.label }}

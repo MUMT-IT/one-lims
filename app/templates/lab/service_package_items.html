@@ -22,7 +22,7 @@
                     <tbody>
                     {% for test in package.tests %}
                         <tr>
-                            <td>{{ test.name }}</td>
+                            <td>{{ test.name }} ({{ test.code }})</td>
                             <td>{{ test.detail }}</td>
                             <td>{{ test.price }}</td>
                         </tr>
@@ -45,12 +45,14 @@
                     <thead>
                     <th>Name</th>
                     <th>Description</th>
+                    <th>Tests</th>
                     </thead>
                     <tbody>
                     {% for profile in package.profiles %}
                         <tr>
                             <td>{{ profile }}</td>
                             <td>{{ profile.detail }}</td>
+                            <td>{{ profile.tests_list }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
