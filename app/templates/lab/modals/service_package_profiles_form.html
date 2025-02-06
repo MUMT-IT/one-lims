@@ -5,13 +5,13 @@
             <p class="modal-card-title">Service Tests Form</p>
             <button type="button" id="cancelButton" class="delete" aria-label="close"></button>
         </header>
-        <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_tests_service_package', package_id=package.id) }}">
+        <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_profiles_service_package', package_id=package.id) }}">
             {{ form.hidden_tag() }}
             <section class="modal-card-body">
                 <div class="field">
-                    <label class="label">{{ form.tests.label }}</label>
+                    <label class="label">{{ form.profiles.label }}</label>
                     <div>
-                        {{ form.tests() }}
+                        {{ form.profiles() }}
                     </div>
                 </div>
                 <div class="buttons">

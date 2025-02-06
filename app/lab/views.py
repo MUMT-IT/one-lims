@@ -19,7 +19,6 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
@@ -1419,3 +1418,89 @@ def edit_test_profile_record(order_id, profile_id):
     return render_template('lab/test_profile_record_form.html',
                            form=form, order=order, profile=profile, code_names=code_names)
 
+
+@lab.route('/lab/<int:lab_id>/packages', methods=['GET', 'POST'])
+@login_required
+def list_service_packages(lab_id):
+    lab = Laboratory.query.get(lab_id)
+    return render_template('lab/service_package_list.html', lab=lab)
+
+
+@lab.route('/lab/<int:lab_id>/package-form', methods=['GET', 'POST'])
+@lab.route('/lab/<int:lab_id>/packages/<int:package_id>', methods=['GET', 'POST'])
+@login_required
+def edit_service_package(lab_id=None, package_id=None):
+    if package_id:
+        package = LabServicePackage.query.get(package_id)
+        form = LabServicePackageForm(obj=package)
+    else:
+        form = LabServicePackageForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if not package_id:
+                package = LabServicePackage(lab_id=lab_id)
+            form.populate_obj(package)
+            package.creator = current_user
+            package.created_at = arrow.now('Asia/Bangkok').datetime
+            db.session.add(package)
+            db.session.commit()
+            flash('เพิ่มรายการตรวจแบบชุดเรียบร้อย', 'success')
+            return redirect(url_for('lab.list_service_packages', lab_id=lab_id))
+        else:
+            flash(form.errors, 'danger')
+    return render_template('lab/service_package_form.html', form=form, lab_id=lab_id)
+
+
+@lab.route('/packages/<int:package_id>/items', methods=['GET', 'POST'])
+@login_required
+def manage_service_package_items(package_id):
+    package = LabServicePackage.query.get(package_id)
+    return render_template('lab/service_package_items.html', package=package)
+
+
+@lab.route('/packages/<int:package_id>/tests', methods=['GET', 'POST'])
+@login_required
+def edit_tests_service_package(package_id=None):
+    package = LabServicePackage.query.get(package_id)
+    LabServicePackageTestsForm = create_lab_service_package_tests_form(package.lab_id)
+    form = LabServicePackageTestsForm(obj=package)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            form.populate_obj(package)
+            package.updated_at = arrow.now('Asia/Bangkok').datetime
+            db.session.add(package)
+            db.session.commit()
+            flash('The package has been updated.', 'success')
+            resp = make_response()
+            resp.headers['HX-Refresh'] = 'true'
+            return resp
+        else:
+            print(form.errors)
+            resp = make_response()
+            resp.headers['HX-Trigger'] = 'closeModal'
+            return resp
+    return render_template('lab/modals/service_package_tests_form.html', form=form, package=package)
+
+
+@lab.route('/packages/<int:package_id>/profiles', methods=['GET', 'POST'])
+@login_required
+def edit_profiles_service_package(package_id=None):
+    package = LabServicePackage.query.get(package_id)
+    LabServicePackageProfilesForm = create_lab_service_package_profiles_form(package.lab_id)
+    form = LabServicePackageProfilesForm(obj=package)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            form.populate_obj(package)
+            package.updated_at = arrow.now('Asia/Bangkok').datetime
+            db.session.add(package)
+            db.session.commit()
+            flash('The package has been updated.', 'success')
+            resp = make_response()
+            resp.headers['HX-Refresh'] = 'true'
+            return resp
+        else:
+            print(form.errors)
+            resp = make_response()
+            resp.headers['HX-Trigger'] = 'closeModal'
+            return resp
+    return render_template('lab/modals/service_package_profiles_form.html', form=form, package=package)

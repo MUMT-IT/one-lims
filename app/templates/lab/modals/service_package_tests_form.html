@@ -1,32 +1,22 @@
-<div class="modal is-active animate__animated" id="clo-modal">
+<div class="modal is-active animate__animated" id="service-package-tests-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Physical Exam Record Form</p>
+            <p class="modal-card-title">Service Tests Form</p>
             <button type="button" id="cancelButton" class="delete" aria-label="close"></button>
         </header>
-        <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_payment_record', order_id=order.id) }}">
+        <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_tests_service_package', package_id=package.id) }}">
             {{ form.hidden_tag() }}
             <section class="modal-card-body">
                 <div class="field">
-                    <label class="label">{{ form.payment_method.label }}</label>
-                    <div class="select">
-                        {{ form.payment_method() }}
-                    </div>
-                </div>
-                <div class="field">
-                    <label class="label">Amount Balance</label>
-                    <input class="input" type="input" value="{{ order.amount_balance }}" readonly>
-                </div>
-                <div class="field">
-                    <label class="label">{{ form.payment_amount.label }}</label>
-                    <div class="control">
-                        {{ form.payment_amount(class="input") }}
+                    <label class="label">{{ form.tests.label }}</label>
+                    <div>
+                        {{ form.tests() }}
                     </div>
                 </div>
                 <div class="buttons">
                     <button class="button is-light" id="cancel-btn">Cancel</button>
-                    <button class="button is-success" id="save-btn">Save</button>
+                    <button type="submit" class="button is-success" id="save-btn">Save</button>
                 </div>
             </section>
         </form>
@@ -35,12 +25,12 @@
 <script>
     window.document.getElementById("cancel-btn").addEventListener("click", function (event) {
         event.preventDefault()
-        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+        htmx.removeClass(htmx.find('#service-package-tests-modal'), 'is-active')
     })
     window.document.getElementById("cancelButton").addEventListener("click", function () {
-        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+        htmx.removeClass(htmx.find('#service-package-tests-modal'), 'is-active')
     })
     window.addEventListener('closeModal', (evt) => {
-        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+        htmx.removeClass(htmx.find('#service-package-tests-modal'), 'is-active')
     })
 </script>

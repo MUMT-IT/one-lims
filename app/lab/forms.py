@@ -142,10 +142,39 @@ def create_lab_test_profile_form(lab_id):
         tests = QuerySelectMultipleField('Tests',
                                          query_factory=lambda: LabTest.query.filter_by(lab_id=lab_id),
                                          widget=ListWidget(prefix_label=False),
-                                         option_widget=CheckboxInput())
+                                         option_widget=CheckboxInput()
+                                         )
     return LabTestProfileForm
 
 
 class LabServicePackageForm(ModelForm):
     class Meta:
         model = LabServicePackage
+        exclude = ['created_at']
+
+
+def create_lab_service_package_tests_form(lab_id):
+    class LabServicePackageTestsForm(ModelForm):
+        class Meta:
+            model = LabServicePackage
+            exclude = ['name', 'created_at']
+        tests = QuerySelectMultipleField('Tests',
+                                         query_factory=lambda: LabTest.query.filter_by(lab_id=lab_id),
+                                         widget=ListWidget(prefix_label=False),
+                                         option_widget=CheckboxInput())
+
+    return LabServicePackageTestsForm
+
+
+def create_lab_service_package_profiles_form(lab_id):
+    class LabServicePackageProfilesForm(ModelForm):
+        class Meta:
+            model = LabServicePackage
+            exclude = ['created_at', 'name']
+
+        profiles = QuerySelectMultipleField('Profiles',
+                                            query_factory=lambda: LabTestProfile.query.filter_by(lab_id=lab_id),
+                                            widget=ListWidget(prefix_label=False),
+                                            option_widget=CheckboxInput())
+
+    return LabServicePackageProfilesForm

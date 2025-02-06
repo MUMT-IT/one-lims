@@ -5,81 +5,52 @@
     <div class="container">
         <div class="tabs is-centered is-boxed">
             <ul>
-                <li class="is-active"><a>Tests</a></li>
+                <li><a>Tests</a></li>
                 <li><a href="{{ url_for('lab.test_profiles', lab_id=lab.id) }}">Profiles</a></li>
+                <li class="is-active"><a href="{{ url_for('lab.list_service_packages', lab_id=lab.id) }}">Service Packages</a></li>
                 <li><a href="{{ url_for('lab.list_choice_sets', lab_id=lab.id) }}">Result Choice Sets</a></li>
             </ul>
         </div>
         <div class="columns">
             <div class="column">
-                {% include "messages.html" %}
-            </div>
-        </div>
-        <div class="columns">
-            <div class="column">
+            {% include "messages.html" %}
             <div>
                 <div class="buttons is-right">
                     <a class="button is-success is-rounded"
-                       href="{{ url_for('lab.add_test', lab_id=lab.id) }}">
+                       href="{{ url_for('lab.edit_service_package', lab_id=lab.id) }}">
                         <span class="icon">
                             <i class="fas fa-plus-circle"></i>
                         </span>
-                        <span>Add</span>
+                        <span>Add Package</span>
                     </a>
                 </div>
-                <table class="table is-striped">
+                <table class="table is-fullwidth is-striped">
                     <thead>
-                    <th>Code</th>
                     <th>Name</th>
                     <th>Description</th>
-                    <th>Choice Set</th>
-                    <th>Unit</th>
-                    <th>Min Value</th>
-                    <th>Max Value</th>
-                    <th>Ref. Min Value</th>
-                    <th>Ref. Max Value</th>
                     <th>Price</th>
                     <th>Added at</th>
-                    <th>Active</th>
                     <th></th>
                     </thead>
                     <tbody>
-                    {% for test in lab.tests %}
+                    {% for p in lab.service_packages %}
                         <tr>
+                            <td>{{ p.name }}</td>
+                            <td>{{ p.detail }}</td>
+                            <td>{{ p.price }}</td>
+                            <td>{{ p.created_at|humanizedt }}</td>
                             <td>
-                                {{ test.code }}
-                            </td>
-                            <td>{{ test.name }}</td>
-                            <td>{{ test.detail }}</td>
-                            <td>
-                                <span class="icon">
-                                    <i class="fas fa-link"></i>
-                                </span>
-                                <span>{{ test.choice_set.id }} {{ test.choice_set }}</span>
-                            </td>
-                            <td>{{ test.unit }}</td>
-                            <td>{{ test.min_value }}</td>
-                            <td>{{ test.max_value }}</td>
-                            <td>{{ test.min_ref_value }}</td>
-                            <td>{{ test.max_ref_value }}</td>
-                            <td>{{ test.price }}</td>
-                            <td>{{ test.added_at|humanizedt }}</td>
-                            <td>
-                                {% if test.active %}
-                                    <span class="icon">
-                                    <i class="fas fa-check-circle has-text-success"></i>
-                                </span>
-                                {% else %}
-                                    <span class="icon">
-                                    <i class="fas fa-minus-circle has-text-danger"></i>
-                                </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('lab.edit_test', test_id=test.id, lab_id=test.lab.id) }}">
+                                <a class="button is-rounded" href="{{ url_for('lab.edit_service_package', package_id=p.id, lab_id=lab.id) }}">
                                     <span class="icon">
                                         <i class="fas fa-pencil-alt"></i>
                                     </span>
+                                    <span>Edit</span>
+                                </a>
+                                <a class="button is-rounded" href="{{ url_for('lab.manage_service_package_items', package_id=p.id) }}">
+                                    <span class="icon">
+                                        <i class="fas fa-box-open"></i>
+                                    </span>
+                                    <span>Items</span>
                                 </a>
                             </td>
                         </tr>

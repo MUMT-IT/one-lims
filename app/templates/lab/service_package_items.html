@@ -3,14 +3,6 @@
 {% block content %}
     <section class="section">
     <div class="container">
-        <div class="tabs is-centered is-boxed">
-            <ul>
-                <li><a>Tests</a></li>
-                <li><a href="{{ url_for('lab.test_profiles', lab_id=lab.id) }}">Profiles</a></li>
-                <li class="is-active"><a href="{{ url_for('lab.list_service_packages', lab_id=lab.id) }}">Service Packages</a></li>
-                <li><a href="{{ url_for('lab.list_choice_sets', lab_id=lab.id) }}">Result Choice Sets</a></li>
-            </ul>
-        </div>
         <div class="columns">
             <div class="column">
                 {% include "messages.html" %}
@@ -18,54 +10,66 @@
         </div>
         <div class="columns">
             <div class="column">
-            <div>
-                <div class="buttons is-right">
-                    <a class="button is-success is-rounded"
-                       href="{{ url_for('lab.edit_service_package', lab_id=lab.id) }}">
-                        <span class="icon">
-                            <i class="fas fa-plus-circle"></i>
-                        </span>
-                        <span>Add</span>
-                    </a>
-                </div>
+                <div id="modal-form-holder"></div>
+                <h1 class="title">Lab Tests</h1>
                 <table class="table is-fullwidth is-striped">
                     <thead>
                     <th>Name</th>
                     <th>Description</th>
                     <th>Price</th>
-                    <th>Added at</th>
                     <th></th>
                     </thead>
                     <tbody>
-                    {% for p in lab.service_packages %}
+                    {% for test in package.tests %}
                         <tr>
-                            <td>{{ p.name }}</td>
-                            <td>{{ p.detail }}</td>
-                            <td>{{ p.price }}</td>
-                            <td>{{ p.created_at|humanizedt }}</td>
-                            <td>
-                                <a class="button is-rounded" href="{{ url_for('lab.edit_service_package', package_id=p.id, lab_id=lab.id) }}">
-                                    <span class="icon">
-                                        <i class="fas fa-pencil-alt"></i>
-                                    </span>
-                                    <span>edit</span>
-                                </a>
-                                <a class="button is-rounded" href="{{ url_for('lab.edit_service_package', package_id=p.id, lab_id=lab.id) }}">
-                                    <span class="icon">
-                                        <i class="fas fa-box-open"></i>
-                                    </span>
-                                    <span>items</span>
-                                </a>
-                            </td>
+                            <td>{{ test.name }}</td>
+                            <td>{{ test.detail }}</td>
+                            <td>{{ test.price }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
-            </div>
+                <div class="buttons is-centered">
+                    <a class="button is-success is-rounded"
+                       hx-target="#modal-form-holder"
+                       hx-swap="innerHTML"
+                       hx-get="{{ url_for('lab.edit_tests_service_package', package_id=package.id) }}">
+                        <span class="icon">
+                            <i class="fas fa-cog"></i>
+                        </span>
+                        <span>Manage</span>
+                    </a>
+                </div>
+                <h1 class="title">Lab Test Profiles</h1>
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                    <th>Name</th>
+                    <th>Description</th>
+                    </thead>
+                    <tbody>
+                    {% for profile in package.profiles %}
+                        <tr>
+                            <td>{{ profile }}</td>
+                            <td>{{ profile.detail }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="buttons is-centered">
+                    <a class="button is-success is-rounded"
+                       hx-target="#modal-form-holder"
+                       hx-swap="innerHTML"
+                       hx-get="{{ url_for('lab.edit_profiles_service_package', package_id=package.id) }}">
+                        <span class="icon">
+                            <i class="fas fa-cog"></i>
+                        </span>
+                        <span>Manage</span>
+                    </a>
+                </div>
             </div>
         </div>
         <div class="buttons is-centered">
-            <a href="{{ url_for('lab.landing', lab_id=lab.id) }}"
+            <a href="{{ url_for('lab.list_service_packages', lab_id=package.lab_id) }}"
                 class="button is-light is-rounded">
                 <span class="icon">
                     <i class="fas fa-chevron-left"></i>
