@@ -19,6 +19,13 @@
                         </div>
                     </div>
                     <div class="field">
+                        <label class="label">{{ form.code.label }}</label>
+                        <div class="control">
+                            {{ form.code(class="input is-danger") }}
+                            <p class="help is-danger">รหัสต้องไม่ซ้ำกัน</p>
+                        </div>
+                    </div>
+                    <div class="field">
                         <label class="label">{{ form.detail.label }}</label>
                         <div class="control">
                             {{ form.detail(class="textarea") }}

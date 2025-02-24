@@ -545,6 +545,7 @@ class LabServicePackage(db.Model):
     __tablename__ = 'lab_service_packages'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     name = db.Column('name', db.String(), nullable=False, info={'label': 'ชื่อ'})
+    code = db.Column('code', db.String(), unique=True, info={'label': 'รหัส'})
     detail = db.Column('detail', db.Text(), info={'label': 'รายละเอียด'})
     created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
     updated_at = db.Column('updated_at', db.DateTime(timezone=True), nullable=True)
