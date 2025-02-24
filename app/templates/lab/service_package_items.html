@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                {% include "messages.html" %}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div id="modal-form-holder"></div>
+                <h1 class="title">Lab Tests</h1>
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th></th>
+                    </thead>
+                    <tbody>
+                    {% for test in package.tests %}
+                        <tr>
+                            <td>{{ test.name }} ({{ test.code }})</td>
+                            <td>{{ test.detail }}</td>
+                            <td>{{ test.price }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="buttons is-centered">
+                    <a class="button is-success is-rounded"
+                       hx-target="#modal-form-holder"
+                       hx-swap="innerHTML"
+                       hx-get="{{ url_for('lab.edit_tests_service_package', package_id=package.id) }}">
+                        <span class="icon">
+                            <i class="fas fa-cog"></i>
+                        </span>
+                        <span>Manage</span>
+                    </a>
+                </div>
+                <h1 class="title">Lab Test Profiles</h1>
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Tests</th>
+                    </thead>
+                    <tbody>
+                    {% for profile in package.profiles %}
+                        <tr>
+                            <td>{{ profile }}</td>
+                            <td>{{ profile.detail }}</td>
+                            <td>{{ profile.tests_list }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="buttons is-centered">
+                    <a class="button is-success is-rounded"
+                       hx-target="#modal-form-holder"
+                       hx-swap="innerHTML"
+                       hx-get="{{ url_for('lab.edit_profiles_service_package', package_id=package.id) }}">
+                        <span class="icon">
+                            <i class="fas fa-cog"></i>
+                        </span>
+                        <span>Manage</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="buttons is-centered">
+            <a href="{{ url_for('lab.list_service_packages', lab_id=package.lab_id) }}"
+                class="button is-light is-rounded">
+                <span class="icon">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                <span>Back</span>
+            </a>
+        </div>
+    </div>
+    </section>
+{% endblock %}

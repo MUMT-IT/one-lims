@@ -7,6 +7,7 @@
             <ul>
                 <li class="is-active"><a>Tests</a></li>
                 <li><a href="{{ url_for('lab.test_profiles', lab_id=lab.id) }}">Profiles</a></li>
+                <li><a href="{{ url_for('lab.list_service_packages', lab_id=lab.id) }}">Service Packages</a></li>
                 <li><a href="{{ url_for('lab.list_choice_sets', lab_id=lab.id) }}">Result Choice Sets</a></li>
             </ul>
         </div>
@@ -52,18 +53,15 @@
                             <td>{{ test.name }}</td>
                             <td>{{ test.detail }}</td>
                             <td>
-                                <span class="icon">
-                                    <i class="fas fa-link"></i>
-                                </span>
-                                <span>{{ test.choice_set.id }} {{ test.choice_set }}</span>
+                                {{ test.choice_set or "" }}
                             </td>
                             <td>{{ test.unit }}</td>
-                            <td>{{ test.min_value }}</td>
-                            <td>{{ test.max_value }}</td>
-                            <td>{{ test.min_ref_value }}</td>
-                            <td>{{ test.max_ref_value }}</td>
+                            <td>{{ test.min_value or "-" }}</td>
+                            <td>{{ test.max_value or "-" }}</td>
+                            <td>{{ test.min_ref_value or "-" }}</td>
+                            <td>{{ test.max_ref_value or "-" }}</td>
                             <td>{{ test.price }}</td>
-                            <td>{{ test.added_at|humanizedt }}</td>
+                            <td>{{ test.added_at|localdatetime }}</td>
                             <td>
                                 {% if test.active %}
                                     <span class="icon">

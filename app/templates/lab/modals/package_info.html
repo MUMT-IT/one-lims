@@ -1,0 +1,24 @@
+<div class="modal is-active" id="a-modal">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+    <div class="box">
+        <ul>
+            {% for test in package.tests  %}
+                <li>{{ test.name }} ({{ test.code }})</li>
+            {% endfor %}
+        </ul>
+        <ul>
+            {% for profile in package.profiles  %}
+                <li>{{ profile.name }} ({{ profile.tests_list }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    </div>
+    <button class="modal-close is-large" aria-label="close" id="closeButton"></button>
+</div>
+<script>
+    window.document.getElementById("closeButton").addEventListener("click", function () {
+        event.preventDefault()
+        htmx.removeClass(htmx.find('#a-modal'), 'is-active')
+    })
+</script>

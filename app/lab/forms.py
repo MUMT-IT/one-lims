@@ -91,9 +91,11 @@ def create_lab_test_record_form(test, default=None):
 
         choice_set = QuerySelectField('Result choices',
                                       query_factory=lambda: [] if not test.choice_set else test.choice_set.choice_items,
-                                      allow_blank=False,
+                                      allow_blank=True,
+                                      blank_text='Please select',
                                       default=default_choice,
                                       validators=[Optional()])
+        numeric = BooleanField('Numeric Result', default=True if test.data_type == "Numeric" else False)
 
     return LabTestRecordForm
 
@@ -105,7 +107,7 @@ def create_lab_test_profile_record_form(order):
         for code in code_list:
             test = LabTest.query.filter_by(code=code).first()
             form = create_lab_test_record_form(test)
-            vars()[code] = FormField(form)
+            vars()[code] = FormField(form, default=LabTestRecord)
     return LabTestProfileRecordForm
 
 
@@ -140,5 +142,39 @@ def create_lab_test_profile_form(lab_id):
         tests = QuerySelectMultipleField('Tests',
                                          query_factory=lambda: LabTest.query.filter_by(lab_id=lab_id),
                                          widget=ListWidget(prefix_label=False),
-                                         option_widget=CheckboxInput())
+                                         option_widget=CheckboxInput()
+                                         )
     return LabTestProfileForm
+
+
+class LabServicePackageForm(ModelForm):
+    class Meta:
+        model = LabServicePackage
+        exclude = ['created_at']
+
+
+def create_lab_service_package_tests_form(lab_id):
+    class LabServicePackageTestsForm(ModelForm):
+        class Meta:
+            model = LabServicePackage
+            exclude = ['name', 'created_at']
+        tests = QuerySelectMultipleField('Tests',
+                                         query_factory=lambda: LabTest.query.filter_by(lab_id=lab_id),
+                                         widget=ListWidget(prefix_label=False),
+                                         option_widget=CheckboxInput())
+
+    return LabServicePackageTestsForm
+
+
+def create_lab_service_package_profiles_form(lab_id):
+    class LabServicePackageProfilesForm(ModelForm):
+        class Meta:
+            model = LabServicePackage
+            exclude = ['created_at', 'name']
+
+        profiles = QuerySelectMultipleField('Profiles',
+                                            query_factory=lambda: LabTestProfile.query.filter_by(lab_id=lab_id),
+                                            widget=ListWidget(prefix_label=False),
+                                            option_widget=CheckboxInput())
+
+    return LabServicePackageProfilesForm

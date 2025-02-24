@@ -12,7 +12,7 @@
                 <div class="column">
                     <h1 class="title is-size-4 has-text-centered">All Orders</h1>
                     <h1 class="subtitle is-size-4 has-text-centered">{{ customer.fullname }}</h1>
-                    <div class="box">
+                    <div>
                         <p class="notification">รายการคำสั่งตรวจที่รับรองผลแล้วหมายถึงส่งผลการทดสอบให้ผู้ใช้แล้ว<button class="delete"></button></p>
                         <table class="table is-fullwidth">
                             <thead>
@@ -86,6 +86,13 @@
                         <i class="fas fa-chevron-left"></i>
                     </span>
                     <span>Back</span>
+                </a>
+                <a href="{{ url_for('lab.add_test_order', lab_id=customer.lab.id, customer_id=customer.id, back=request.url) }}"
+                   class="button is-success is-rounded">
+                    <span class="icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </span>
+                    <span>New Order</span>
                 </a>
             </div>
         </div>

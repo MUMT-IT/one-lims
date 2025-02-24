@@ -1,23 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Order Barcode</title>
-</head>
-<body>
-<table>
-    {% for order, barcode in barcodes %}
-        <tr>
-        <td>
-            {{ order.customer }}
-        </td>
-        </tr>
-        <tr>
-        <td>
-            {{ barcode|safe }}
-        </td>
-        </tr>
-    {% endfor %}
-</table>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block content %}
+    {{ barcodes|safe }}
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script>
+        let docDefinition = {{ docdef|tojson|safe }};
+        pdfMake.fonts = {
+   // download default Roboto font from cdnjs.com
+           Roboto: {
+             normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+             bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
+             italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
+             bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
+           },
+        }
+        pdfMake.createPdf(docDefinition).open();
+    </script>
+{% endblock %}

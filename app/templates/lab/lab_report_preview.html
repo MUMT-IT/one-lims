@@ -119,6 +119,12 @@
                 </span>
             <span>Request</span>
         </a>
+        <a href="{{ url_for('lab.print_report', order_id=order.id) }}" class="button is-rounded is-success">
+                <span class="icon">
+                    <i class="fas fa-print"></i>
+                </span>
+            <span>Report</span>
+        </a>
 {#        <button onclick="window.print()" id="print-btn" class="button is-rounded is-success">#}
 {#                <span class="icon">#}
 {#                    <i class="fas fa-print"></i>#}

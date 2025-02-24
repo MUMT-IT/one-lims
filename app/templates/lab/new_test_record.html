@@ -61,20 +61,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label">{{ form.choice_set.label }}</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field is-expanded">
-                                <div class="control is-expanded">
-                                    <div class="select">
-                                        {{ form.choice_set() }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     {% if rec.test.data_type == 'Numeric' %}
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
@@ -89,6 +75,20 @@
                         </div>
                     </div>
                     {% elif rec.test.data_type == 'Text' %}
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">{{ form.choice_set.label }}</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field is-expanded">
+                                    <div class="control is-expanded">
+                                        <div class="select is-fullwidth">
+                                            {{ form.choice_set() }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
                                 <label class="label">{{ form.text_result.label }}</label>

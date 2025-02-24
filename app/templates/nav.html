@@ -25,23 +25,23 @@
     </div>
 
     <div class="navbar-end">
-    {% if lab %}
+    {% if session.get('lab_id') %}
     <div class="navbar-item has-dropdown is-hoverable">
     <a class="navbar-link">
-        {{ lab.name }}
+        Laboratory
     </a>
     <div class="navbar-dropdown is-boxed is-right">
       <a class="navbar-item">
           Staff
       </a>
-      <a class="navbar-item">
+      <a class="navbar-item" href="{{ url_for('lab.list_tests', lab_id=session.get('lab_id')) }}">
           Tests
       </a>
-      <a class="navbar-item" href="{{ url_for('lab.edit_lab', lab_id=lab.id) }}">
+      <a class="navbar-item" href="{{ url_for('lab.edit_lab', lab_id=session.get('lab_id')) }}">
           Information
       </a>
       <hr class="navbar-divider">
-      <a class="navbar-item" href="{{ url_for('lab.landing', lab_id=lab.id) }}">
+      <a class="navbar-item" href="{{ url_for('lab.landing', lab_id=session.get('lab_id')) }}">
           Main Menu
       </a>
     </div>
