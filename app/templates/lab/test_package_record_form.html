@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                {% include "messages.html" %}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+            <h1 class="title">Add Lab Result</h1>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+{#                    <div class="field is-horizontal">#}
+{#                        <div class="field-label is-normal">#}
+{#                            <label class="label">H.N.</label>#}
+{#                        </div>#}
+{#                        <div class="field-body">#}
+{#                            <div class="field">#}
+{#                                <div class="control">#}
+{#                                    <input type="text" class="input" disabled value="{{ order.customer.id }}">#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="field is-horizontal">#}
+{#                        <div class="field-label is-normal">#}
+{#                            <label class="label">Name</label>#}
+{#                        </div>#}
+{#                        <div class="field-body">#}
+{#                            <div class="field">#}
+{#                                <div class="control">#}
+{#                                    <input type="text" class="input" disabled value="{{ order.customer.fullname }}">#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+                    {% for form_field in form %}
+                        {% if form_field.name in code_names %}
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">{{ form_field.name }}</label>
+                            </div>
+                            <div class="field-body">
+                                {% if form_field.numeric.data %}
+                                <div class="field">
+                                    <div class="control">
+                                        {{ form_field.num_result(class="input", placeholder="Result") }}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="field is-expanded">
+                                    <div class="control is-expanded">
+                                        <div class="select is-fullwidth">
+                                            {{ form_field.choice_set() }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="field is-expanded">
+                                    <div class="control is-expanded">
+                                        {{ form_field.text_result(class="input", placeholder="Text result") }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {{ form_field.numeric(style="visibility: hidden;") }}
+                                <div class="field">
+                                    <div class="control">
+                                        {{ form_field.comment(class="input", placeholder="Comment") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+{#                    <div class="field is-horizontal">#}
+{#                        <div class="field-label is-normal">#}
+{#                            <label class="label">Ordered At</label>#}
+{#                        </div>#}
+{#                        <div class="field-body">#}
+{#                            <div class="field">#}
+{#                                <div class="control">#}
+{#                                    <input type="text" class="input" disabled value="{{ order.ordered_at|humanizedt }}">#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    {% endif %}#}
+                        {% endif %}
+                    {% endfor %}
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label"></label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field is-grouped">
+{#                                <div class="control">#}
+{#                                    <a class="button is-light" href="{{ url_for('lab.show_customer_test_records', customer_id=order.customer.id, order_id=order.id) }}">Cancel</a>#}
+{#                                </div>#}
+                                <div class="control">
+                                    <button class="button is-success" type="submit">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

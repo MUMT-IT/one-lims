@@ -34,6 +34,7 @@ lab_test_profile_package_assoc = db.Table('lab_test_profile_package_assoc',
                                           db.Column('profile_id', db.ForeignKey('lab_test_profiles.id')),
                                           db.Column('package_id', db.ForeignKey('lab_service_packages.id')))
 
+
 class LabHNCount(db.Model):
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     year = db.Column('year', db.Integer, nullable=False)
@@ -41,10 +42,10 @@ class LabHNCount(db.Model):
     count = db.Column('count', db.Integer, default=0)
 
     def increment(self):
-        if self.count < 99999:
+        if self.count < 9999:
             self.count += 1
         else:
-            raise ValueError('HN count cannot exceed 99999 per month.')
+            raise ValueError('HN count cannot exceed 9999 per month.')
 
     @classmethod
     def get_new_hn(cls, year, month):
@@ -55,7 +56,7 @@ class LabHNCount(db.Model):
         _hn.increment()
         db.session.add(_hn)
         db.session.commit()
-        return f'{str(_hn.year)[-2:]}{_hn.month:02}{_hn.count:05}'
+        return f'{str(_hn.year)[-2:]}{_hn.month:02}{_hn.count:04}'
 
 
 class LabCustomerUnderlyingDisease(db.Model):
@@ -108,7 +109,6 @@ class LabCustomerMedication(db.Model):
 
 class LabCustomer(db.Model):
     __tablename__ = 'lab_customers'
-    # id is used as an HN
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     title = db.Column('title', db.String(), info={'label': 'Title',
                                                   'choices': [(t, t) for t in ['นาย',
@@ -246,6 +246,7 @@ class LabTestProfile(db.Model):
     lab = db.relationship(Laboratory, backref=db.backref('test_profiles', cascade='all, delete-orphan'))
     active = db.Column('active', db.Boolean(), default=True)
     test_order = db.Column('test_order', db.Text(), info={'label': 'Test Order'})
+    profile_price = db.Column('price', db.Numeric(), info={'label': 'ราคา'})
 
     def __str__(self):
         return self.name
@@ -256,7 +257,8 @@ class LabTestProfile(db.Model):
 
     @property
     def price(self):
-        return sum([test.price for test in self.tests])
+        if not self.profile_price:
+            return sum([test.price for test in self.tests])
 
 
 class LabTest(db.Model):
@@ -388,7 +390,7 @@ class LabTestOrder(db.Model):
             order_count.increment()
         db.session.add(order_count)
         db.session.commit()
-        return f'{str(order_count.year)[-2:]}{order_count.month:02}{order_count.count:05}'
+        return f'{str(order_count.year)[-2:]}{order_count.month:02}{order_count.count:04}'
 
     @property
     def payment(self):
@@ -429,6 +431,8 @@ class LabTestRecord(db.Model):
                                foreign_keys=[receiver_id])
     profile_id = db.Column('profile_id', db.ForeignKey('lab_test_profiles.id'))
     profile = db.relationship(LabTestProfile)
+    package_id = db.Column('package_id', db.ForeignKey('lab_service_packages.id'))
+    package = db.relationship('LabServicePackage')
 
     @property
     def is_active(self):
@@ -552,6 +556,16 @@ class LabServicePackage(db.Model):
                                                          cascade='all, delete-orphan'))
     tests = db.relationship(LabTest, secondary=lab_test_package_assoc)
     profiles = db.relationship(LabTestProfile, secondary=lab_test_profile_package_assoc)
+
+    @property
+    def all_tests(self):
+        tests = self.tests
+        for p in self.profiles:
+            tests += p.tests
+        return tests
+
+    def __str__(self):
+        return self.name
 
 
 sa.orm.configure_mappers()

@@ -13,52 +13,87 @@
                 {% endif %}
             </div>
         </div>
+        <form method="post">
         <div class="columns">
-            <div class="column box is-one-third is-offset-4">
-                <h1 class="title is-size-4">Select Tests</h1>
-                <form method="post">
+            <div class="column">
+                <h1 class="title is-size-4">Tests</h1>
                 <input type="hidden" value="{{ csrf_token() }}" name="csrf_token">
-                    {% for test in lab.tests %}
-                        <div class="field">
-                            <label class="checkbox">
-                                <input type="checkbox" name="test_ids" value="{{ test.id }}"
-                                       {% if test.id in selected_test_ids %}
-                                        checked
-                                       {% endif %}
-                                >
-                                {{ test.name }}
-                            </label>
-                        </div>
-                    {% endfor %}
-                    {% for profile in lab.test_profiles %}
-                        <div class="field">
-                            <label class="checkbox">
-                                <input type="checkbox" name="profile_ids" value="{{ profile.id }}"
-                                        {% if profile.id in selected_profile_ids %}
-                                       checked
-                                        {% endif %}
-                                >
-                                {{ profile.name }}
-                            </label>
-                        </div>
-                    {% endfor %}
-                    <div class="buttons is-centered">
-                        {% if order %}
-                            <a class="button is-light"
-                               href="{{ url_for('lab.show_customer_test_records', customer_id=customer_id, order_id=order.id) }}">
-                                Cancel
-                            </a>
-                        {% else %}
-                            <a class="button is-light"
-                               href="{{ url_for('lab.list_patients', lab_id=lab.id) }}">
-                                Cancel
-                            </a>
-                        {% endif %}
-                        <button class="button is-primary" type="submit">Submit</button>
+                {% for test in lab.tests %}
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" name="test_ids" value="{{ test.id }}"
+                                   {% if test.id in selected_test_ids %}
+                                    checked
+                                   {% endif %}
+                            >
+                            {{ test.name }} ({{ test.code }})
+                        </label>
                     </div>
-                </form>
+                {% endfor %}
+            </div>
+            <div class="column">
+                <h1 class="title is-size-4">Profiles</h1>
+                {% for profile in lab.test_profiles %}
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" name="profile_ids" value="{{ profile.id }}"
+                                    {% if profile.id in selected_profile_ids %}
+                                   checked
+                                    {% endif %}
+                            >
+                            {{ profile.name }} ({{ profile.tests_list }})
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="column">
+                <div id="modal"></div>
+                <h1 class="title is-size-4">Packages</h1>
+                {% for package in lab.service_packages %}
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" name="package_ids" value="{{ package.id }}"
+                                    {% if package.id in selected_package_ids %}
+                                   checked
+                                    {% endif %}
+                            >
+                            {{ package.name }} ({{ package.price or "-" }} บาท)
+                        </label>
+                        <a hx-get="{{ url_for('lab.show_package_info', package_id=package.id) }}"
+                           hx-target="#modal"
+                           hx-swap="innerHTML">
+                            <span>
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </a>
+                    </div>
+                {% endfor %}
             </div>
         </div>
+        <div class="columns">
+            <div class="column">
+                <div class="buttons is-centered">
+                    {% if referrer %}
+                        <a class="button is-light"
+                           href="{{ referrer }}">
+                            Cancel
+                        </a>
+                    {% elif order %}
+                        <a class="button is-light"
+                           href="{{ url_for('lab.show_customer_test_records', customer_id=customer_id, order_id=order.id) }}">
+                            Cancel
+                        </a>
+                    {% else %}
+                        <a class="button is-light"
+                           href="{{ url_for('lab.list_patients', lab_id=lab.id) }}">
+                            Cancel
+                        </a>
+                    {% endif %}
+                    <button class="button is-primary" type="submit">Submit</button>
+                </div>
+            </div>
+        </div>
+        </form>
     </div>
     </section>
 {% endblock %}

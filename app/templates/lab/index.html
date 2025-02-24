@@ -16,82 +16,146 @@
     <section class="section">
     <div class="columns">
         <div class="column">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <p class="notification is-{{ category }}">{{ message }}</p>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+            {% include "messages.html" %}
         </div>
     </div>
     <div class="columns">
-        <div class="column is-one-third is-offset-4">
-            <nav class="panel is-primary">
-                <p class="panel-heading">
-                    Menu
+        <div class="column is-one-fifth">
+            <aside class="menu">
+                <p class="menu-label">
+                    Laboratory
                 </p>
-                <a class="panel-block" href="{{ url_for('lab.geo_checkin', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="fas fa-user-circle"></i>
-                    </span>
-                    เช็คอินเข้าทำงาน (staff)
-                </a>
-                <a class="panel-block" href="{{ url_for('main.list_members', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="fas fa-user-circle"></i>
-                    </span>
-                    รายชื่อบุคลากรในแลบ (staff)
-                </a>
-                <a class="panel-block" href="{{ url_for('lab.list_tests', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="fas fa-vial"></i>
-                    </span>
-                    รายการทดสอบ (tests)
-                </a>
-                <a class="panel-block" href="{{ url_for('lab.list_patients', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="fas fa-users"></i>
-                    </span>
-                    รายชื่อผู้ป่วย/ผู้รับบริการ (clients/patients)
-                </a>
-                <a class="panel-block" href="{{ url_for('lab.list_pending_orders', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="fas fa-hourglass-start"></i>
-                    </span>
-                    รอผลการทดสอบ (pending orders)
-                </a>
-                <a class="panel-block" href="{{ url_for('lab.list_activities', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="far fa-clock"></i>
-                    </span>
-                    ประวัติกิจกรรม (activity log)
-                </a>
-                <a class="panel-block" href="{{ url_for('lab.list_rejected_orders', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="far fa-times-circle"></i>
-                    </span>
-                    รายการปฏิเสธสิ่งส่งตรวจ (specimens rejection records)
-                </a>
-                <a class="panel-block" href="{{ url_for('lab.export_data', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="fas fa-file-download"></i>
-                    </span>
-                    Data Export
-                </a>
-                <a class="panel-block" href="{{ url_for('lab.edit_lab', lab_id=lab.id) }}">
-                    <span class="panel-icon">
-                        <i class="fas fa-pencil-alt"></i>
-                    </span>
-                    แก้ไขข้อมูลแล็บ
-                </a>
-                <a class="panel-block" href="{{ url_for('main.index') }}">
-                    <span class="panel-icon">
-                       <i class="fas fa-chevron-left"></i>
-                    </span>
-                    ออก
-                </a>
-            </nav>
+                <ul class="menu-list">
+                    <li>
+                        <a href="{{ url_for('lab.edit_lab', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="fas fa-pencil-alt"></i>
+                            </span>
+                            แก้ไขข้อมูล
+                        </a>
+                    </li>
+                </ul>
+                <p class="menu-label">
+                    Staff
+                </p>
+                <ul class="menu-list">
+                    <li>
+                        <a href="{{ url_for('lab.geo_checkin', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="fas fa-user-circle"></i>
+                            </span>
+                            เช็คอินเข้าทำงาน
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('main.list_members', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="fas fa-user-circle"></i>
+                            </span>
+                            รายชื่อบุคลากร
+                        </a>
+                    </li>
+                </ul>
+                <p class="menu-label">
+                    Tests and Services
+                </p>
+                <ul class="menu-list">
+                    <li>
+                        <a href="{{ url_for('lab.list_tests', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="fas fa-vial"></i>
+                            </span>
+                            รายการทดสอบ
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('lab.list_pending_orders', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="fas fa-hourglass-start"></i>
+                            </span>
+                            รอผลการทดสอบ
+                        </a>
+                    </li>
+                </ul>
+                <p class="menu-label">
+                    Customers
+                </p>
+                <ul class="menu-list">
+                    <li>
+                        <a href="{{ url_for('lab.list_patients', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="fas fa-users"></i>
+                            </span>
+                            รายชื่อผู้ป่วย/ผู้รับบริการ
+                        </a>
+                    </li>
+                </ul>
+{#                <a class="panel-block" href="{{ url_for('lab.list_activities', lab_id=lab.id) }}">#}
+{#                    <span class="panel-icon">#}
+{#                        <i class="far fa-clock"></i>#}
+{#                    </span>#}
+{#                    ประวัติกิจกรรม (activity log)#}
+{#                </a>#}
+                <p class="menu-label">
+                    Statistics and Analytics
+                </p>
+                <ul class="menu-list">
+                    <li>
+                        <a href="{{ url_for('lab.list_rejected_orders', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="far fa-times-circle"></i>
+                            </span>
+                            รายการปฏิเสธสิ่งส่งตรวจ
+                        </a>
+
+                    </li>
+                    <li>
+                        <a href="{{ url_for('lab.export_data', lab_id=lab.id) }}">
+                            <span class="panel-icon">
+                                <i class="fas fa-file-download"></i>
+                            </span>
+                            Data Export
+                        </a>
+                    </li>
+                </ul>
+                <ul class="menu-list">
+                    <li>
+                        <a href="{{ url_for('main.index') }}">
+                            <span class="panel-icon">
+                               <i class="fas fa-chevron-left"></i>
+                            </span>
+                            ออก
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+        </div>
+        <div class="column">
+            <div class="has-text-centered">
+                <figure class="image is-128x128 is-inline-block">
+                    <img src="{{ url_for('static', filename='img/technical-support.png') }}"/>
+                </figure>
+            </div>
+            <div class="field">
+                <div class="control" id="search-control">
+                    <input hx-get="{{ url_for('lab.search_customers') }}"
+                           hx-target="#customer-table"
+                           hx-swap="innerHTML"
+                           hx-indicator="#search-control"
+                           hx-trigger="input changed delay:500ms"
+                           name="query"
+                           class="input is-large is-rounded" placeholder="ค้นหาผู้รับบริการด้วยชื่อ นามสกุล HN"/>
+                </div>
+            </div>
+            <table class="table is-fullwidth">
+                <thead>
+                <th>HN</th>
+                <th>Firstname</th>
+                <th>Lastname</th>
+                <th></th>
+                </thead>
+                <tbody id="customer-table"></tbody>
+            </table>
         </div>
     </div>
     </section>

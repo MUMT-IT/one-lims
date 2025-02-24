@@ -23,7 +23,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, TableStyle, Table, KeepTogether, Spacer
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 
 from . import lab_blueprint as lab
 from .forms import *
@@ -489,6 +489,7 @@ def add_random_patients(lab_id):
 @login_required
 def add_test_order(lab_id, customer_id, order_id=None):
     lab = Laboratory.query.get(lab_id)
+    referrer = request.args.get('back')
     selected_test_ids = []
     selected_profile_ids = []
     order = None
@@ -518,6 +519,8 @@ def add_test_order(lab_id, customer_id, order_id=None):
         form = request.form
         test_ids = [int(_id) for _id in form.getlist('test_ids')]
         profile_ids = [int(_id) for _id in form.getlist('profile_ids')]
+        package_ids = [int(_id) for _id in form.getlist('package_ids')]
+        selected_test_ids = set(test_ids)
         if not order_id:
             order = LabTestOrder(
                 lab_id=lab_id,
@@ -530,7 +533,18 @@ def add_test_order(lab_id, customer_id, order_id=None):
             for profile_id in profile_ids:
                 profile = LabTestProfile.query.get(profile_id)
                 order.test_records = order.test_records.all() + [LabTestRecord(test_id=test.id, profile_id=profile_id)
-                                                                 for test in profile.tests]
+                                                                 for test in profile.tests if test.id not in selected_test_ids]
+                selected_test_ids.update([t.id for t in profile.tests])
+            for package_id in package_ids:
+                package = LabServicePackage.query.get(package_id)
+                order.test_records = order.test_records.all() + [LabTestRecord(test_id=t.id, package_id=package.id)
+                                                                 for t in package.tests if t.id not in selected_test_ids]
+                selected_test_ids.update([t.id for t in package.tests])
+                for pp in package.profiles:
+                    order.test_records = order.test_records.all()\
+                                         + [LabTestRecord(test_id=test.id, profile_id=pp.id, package_id=package_id)
+                                            for test in profile.tests if test.id not in selected_test_ids]
+                    selected_test_ids.update([t.id for t in profile.tests])
             flash('New order has been added.', 'success')
         else:
             # TODO: refactor this part for better performance
@@ -560,6 +574,7 @@ def add_test_order(lab_id, customer_id, order_id=None):
         return redirect(url_for('lab.show_customer_test_records',
                                 customer_id=customer_id, order_id=order.id))
     return render_template('lab/new_test_order.html',
+                           referrer=referrer,
                            lab=lab,
                            order=order,
                            customer_id=customer_id,
@@ -765,6 +780,21 @@ def receive_test_order(record_id):
     flash('The order has been received.', 'success')
     return redirect(url_for('lab.show_customer_test_records',
                             order_id=record.order_id, customer_id=record.order.customer.id))
+
+
+@lab.route('/orders/<int:order_id>/receive/all', methods=['POST'])
+@login_required
+def receive_all_tests(order_id):
+    order = LabTestOrder.query.get(order_id)
+    for record in order.test_records:
+        record.received_at = arrow.now('Asia/Bangkok').datetime
+        record.receiver = current_user
+        db.session.add(record)
+    db.session.commit()
+    flash('The records has been received.', 'success')
+    resp = make_response()
+    resp.headers['HX-Refresh'] = 'true'
+    return resp
 
 
 @lab.route('/<int:lab_id>/orders/pending', methods=['GET', 'POST'])
@@ -1504,3 +1534,35 @@ def edit_profiles_service_package(package_id=None):
             resp.headers['HX-Trigger'] = 'closeModal'
             return resp
     return render_template('lab/modals/service_package_profiles_form.html', form=form, package=package)
+
+
+@lab.route('/api/customers/search')
+def search_customers():
+    query = request.args.get('query')
+    customers = []
+    if query:
+        try:
+            firstname, lastname = query.split(' ')
+        except ValueError:
+            customers += LabCustomer.query.filter(or_(
+                LabCustomer.firstname.like(f"%{query}%"),
+                LabCustomer.lastname.like(f"%{query}%"),
+                LabCustomer.hn.like(f"%{query}"),
+            )).all()
+        else:
+            customers += LabCustomer.query.filter(and_(
+                LabCustomer.firstname.like(f'%{firstname}%'),
+                LabCustomer.lastname.like(f'%{lastname}%')
+            )).all()
+    template = ''
+    for customer in customers:
+        url = url_for('lab.show_customer_records', customer_id=customer.id)
+        template += f'<tr><td>{customer.hn}</td><td>{customer.firstname} {customer.lastname}</td><td><a href="{url}" class="button is-rounded is-info"><span class="icon"><i class="fas fa-info-circle"></i></span><span>Info</span></a></td>'
+
+    return template
+
+
+@lab.route('/api/packages/<int:package_id>/info')
+def show_package_info(package_id: int):
+    package = LabServicePackage.query.get(package_id)
+    return render_template('lab/modals/package_info.html', package=package)
