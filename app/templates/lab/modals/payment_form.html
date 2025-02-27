@@ -1,3 +1,5 @@
+
+
 <div class="modal is-active animate__animated" id="clo-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -32,6 +34,24 @@
         </form>
     </div>
 </div>
+
+<style>
+    .modal-content {
+    width: 90vw;
+    height: 90vh;
+    max-width: 900%;
+    max-height: 900%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#modal-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+</style>
 <script>
     window.document.getElementById("cancel-btn").addEventListener("click", function (event) {
         event.preventDefault()
