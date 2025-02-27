@@ -284,6 +284,7 @@
                     </span>
                 <span>Pay</span>
             </a>
+
             <div id="paymentModal"></div>
             {% else %}
             <a href="{{ url_for('lab.preview_report', order_id=order.id) }}"
@@ -293,13 +294,16 @@
                 </span>
                 <span>Report</span>
             </a>
-            <a href="{{ url_for('lab.export_receipt_pdf', order_id=order.id) }}"
-               class="button is-rounded is-warning">
+
+                 <a href="{{ url_for('lab.receipt_view', order_id=order.id) }}"
+               class="button is-rounded is-success">
                 <span class="icon">
                     <i class="fas fa-print"></i>
                 </span>
                 <span>Receipt</span>
             </a>
+
+
             {% endif %}
         </div>
     </div>

@@ -37,7 +37,7 @@ from ..auth.models import UserCheckinRecord
 from dotenv import load_dotenv
 import requests
 import json
-# โหลดค่าใน .env
+
 load_dotenv()
 
 # Defining the host is optional and defaults to https://openapi.flowaccount.com/v1
@@ -56,31 +56,24 @@ configuration = openapi_client.Configuration(
     host="https://openapi.flowaccount.com/v1"
 )
 
-
 def get_access_token():
     """
     Request access token from FlowAccount API using credentials from .env file.
     """
-    url = "https://openapi.flowaccount.com/test/token?Content-Type=application/x-www-form-urlencoded"
+    url = f"{configuration.host}/token?Content-Type=application/x-www-form-urlencoded"
 
     # ดึงค่าจาก .env
 
-
-
-    username="ikit.pre@mahidol.edu"
-    password="Sandbox-00"
-    client_id="likit-sandbox-client"
-    client_secret="bGlraXQtc2FuZGJveC1jbGllbnQtMDUvMTEvMjAyNA=="
+    client_id="onelabclinic-production-client"
+    client_secret="b25lbGFiY2xpbmljLXByb2R1Y3Rpb24tY2xpZW50LTIyLzAxLzIwMjU="
     grant_type="client_credentials"
     scope="flowaccount-api"
     # ตรวจสอบว่าข้อมูลสำคัญมีครบ
-    if not all([username, password, client_id, client_secret, grant_type, scope]):
+    if not all([client_id, client_secret, grant_type, scope]):
         raise ValueError("Missing required environment variables for FlowAccount API")
 
     # เตรียม payload
     payload = (
-        f"username={username}&"
-        f"password={password}&"
         f"client_id={client_id}&"
         f"client_secret={client_secret}&"
         f"grant_type={grant_type}&"
@@ -100,8 +93,8 @@ def get_access_token():
         raise Exception(f"Failed to get access token: {response.text}")
 
 
-# @lab.route('/<int:lab_id>/receipts/<int:order_id>', methods=['POST'])
-def send_receipts_with_payment_post(order_id):
+# @lab.route('/<int:lab_id>/invoice/<int:order_id>', methods=['POST'])
+def create_invoice(order_id):
     # รับ token จากฟังก์ชัน
 
     access_token = f"Bearer {get_access_token()}"
@@ -109,134 +102,42 @@ def send_receipts_with_payment_post(order_id):
 
     # รับข้อมูลจากฟอร์ม
 
-    # ตัวอย่างค่าตัวแปร
-    company_name = "บริษัท ตัวอย่าง จำกัด"
-    company_name_en = "Example Co., Ltd."
-    company_address = "123 หมู่ 1 ตำบลตัวอย่าง อำเภอเมือง จังหวัดตัวอย่าง"
-    company_address_en = "123 Moo 1, Example Subdistrict, Muang District, Example Province"
-    company_tax_id = "1234567890123"
-    company_branch = "สำนักงานใหญ่"
-    company_branch_en = "Head Office"
-    company_phone = "02-123-4567"
-    company_mobile = "099-999-9999"
-    contact_code = "001"
-    contact_name = "บริษัท ลูกค้า จำกัด, คุณลูกค้า ซื้อประจำ"
-    contact_address = "123/456 หมู่ 2 ตำบลลูกค้า อำเภอตัวอย่าง จังหวัดตัวอย่าง"
-    contact_tax_id = "1234567890123"
-    contact_branch = "สำนักงาน/สาขา"
-    contact_person = "ลูกค้า"
-    contact_email = "contact@email.com"
-    contact_number = "099-999-9999"
-    contact_zip_code = "12345"
-    contact_group = 1
-    published_on = "2024-12-23"
-    credit_type = 3
-    credit_days = 0
-    due_date = "2024-12-23"
-    sales_name = "พนักงาน ขายหน้าร้าน"
-    project_name = "project A"
-    reference = ""
-    is_vat_inclusive = False
-    use_receipt_deduction = False
-    sub_total = 1000.0
-    discount_percentage = 0
-    discount_amount = 0
-    total_after_discount = 1000.0
-    is_vat = False
-    vat_amount = 0
-    grand_total = 1000.0
-    remarks = "ตัวอย่างหมายเหตุ"
-    internal_notes = "บันทึกภายใน"
-    show_signature_or_stamp = True
-    document_reference = [
-        {
-            "recordId": 1,
-            "referenceDocumentSerial": "INV0001",
-            "referenceDocumentType": 7
-        }
-    ]
-    items = [
-        {
-            "type": 1,
-            "name": "Service A",
-            "description": "ค่าบริการตัวอย่าง",
-            "quantity": 2,
-            "unitName": "บริการ",
-            "pricePerUnit": 500.0,
-            "total": 1000.0,
-            "sellChartOfAccountCode": "41210",
-            "buyChartOfAccountCode": ""
-        }
-    ]
-    document_payment_structure_type = "UpgradeSimpleDocumentWithPaymentReceivingCash"
-    payment_method = 1
-    payment_date = "2024-12-23"
-    collected = 1000.0
-    payment_deduction_type = 0
-    payment_deduction_amount = 0
-    withheld_percentage = 0
-    withheld_amount = 0
-    payment_remarks = "ชำระครบถ้วน"
-    remaining_collected_type = 0
-    remaining_collected = 0
-
-
     payload = {
-        "companyName": company_name,
-        "companyNameEn": company_name_en,
-        "companyAddress": company_address,
-        "companyAddressEn": company_address_en,
-        "companyTaxId": company_tax_id,
-        "companyBranch": company_branch,
-        "companyBranchEn": company_branch_en,
-        "companyPhone": company_phone,
-        "companyMobile": company_mobile,
-        "contactCode": contact_code,
-        "contactName": contact_name,
-        "contactAddress": contact_address,
-        "contactTaxId": contact_tax_id,
-        "contactBranch": contact_branch,
-        "contactPerson": contact_person,
-        "contactEmail": contact_email,
-        "contactNumber": contact_number,
-        "contactZipCode": contact_zip_code,
-        "contactGroup": contact_group,
-        "publishedOn": published_on,
-        "creditType": credit_type,
-        "creditDays": credit_days,
-        "dueDate": due_date,
-        "salesName": sales_name,
-        "projectName": project_name,
-        "reference": reference,
-        "isVatInclusive": is_vat_inclusive,
-        "useReceiptDeduction": use_receipt_deduction,
-        "subTotal": sub_total,
-        "discountPercentage": discount_percentage,
-        "discountAmount": discount_amount,
-        "totalAfterDiscount": total_after_discount,
-        "isVat": is_vat,
-        "vatAmount": vat_amount,
-        "grandTotal": grand_total,
-        "remarks": remarks,
-        "internalNotes": internal_notes,
-        "showSignatureOrStamp": show_signature_or_stamp,
-        "documentReference": document_reference,
-        "items": items,
-        "documentPaymentStructureType": document_payment_structure_type,
-        "paymentMethod": payment_method,
-        "paymentDate": payment_date,
-        "collected": collected,
-        "paymentDeductionType": payment_deduction_type,
-        "paymentDeductionAmount": payment_deduction_amount,
-        "withheldPercentage": withheld_percentage,
-        "withheldAmount": withheld_amount,
-        "paymentRemarks": payment_remarks,
-        "remainingCollectedType": remaining_collected_type,
-        "remainingCollected": remaining_collected
+        "contactCode": request.form.get("contactCode"),
+        "contactName": request.form.get("contactName"),
+        "contactAddress": request.form.get("contactAddress"),
+        "contactTaxId": request.form.get("contactTaxId"),
+        "contactBranch": request.form.get("contactBranch"),
+        "contactPerson": request.form.get("contactPerson"),
+        "contactEmail": request.form.get("contactEmail"),
+        "contactNumber": request.form.get("contactNumber"),
+        "contactZipCode": request.form.get("contactZipCode"),
+        "contactGroup": int(request.form.get("contactGroup", 0)),
+        "publishedOn": request.form.get("publishedOn"),
+        "creditType": int(request.form.get("creditType", 0)),
+        "creditDays": int(request.form.get("creditDays", 0)),
+        "dueDate": request.form.get("dueDate"),
+        "salesName": request.form.get("salesName"),
+        "projectName": request.form.get("projectName"),
+        "reference": request.form.get("reference"),
+        "isVatInclusive": request.form.get("isVatInclusive") == "true",
+        "items": json.loads(request.form.get("items", "[]")),
+        "subTotal": float(request.form.get("subTotal", 0)),
+        "discountPercentage": float(request.form.get("discountPercentage", 0)),
+        "discountAmount": float(request.form.get("discountAmount", 0)),
+        "totalAfterDiscount": float(request.form.get("totalAfterDiscount", 0)),
+        "vatableAmount": float(request.form.get("vatableAmount", 0)),
+        "vatAmount": float(request.form.get("vatAmount", 0)),
+        "isVat": request.form.get("isVat") == "true",
+        "grandTotal": float(request.form.get("grandTotal", 0)),
+        "documentShowWithholdingTax": request.form.get("documentShowWithholdingTax") == "true",
+        "documentWithholdingTaxPercentage": float(request.form.get("documentWithholdingTaxPercentage", 0)),
+        "remarks": request.form.get("remarks"),
+        "internalNotes": request.form.get("internalNotes")
     }
 
-    # เรียกใช้ API
-    url = "https://openapi.flowaccount.com/test/upgrade/receipts/with-payment"
+    #เรียกใช้ API
+    url = f"{configuration.host}/tax-invoices"
     headers = {
         "Authorization": f"{access_token}",
         "Content-Type": "application/json"
@@ -1190,21 +1091,29 @@ def edit_payment_record(order_id):
     order = LabTestOrder.query.get(order_id)
     record = order.payment
     form = LabPaymentRecordForm(obj=record) if record else LabPaymentRecordForm()
+
+
     if request.method == 'POST':
         if form.validate_on_submit():
             if order.payment:
                 record = order.payment
             else:
                 record = LabOrderPaymentRecord()
+
+            # Create CA_Receipt here
+
+            # Return CA_Receipt Number and add to one lab record
+
             form.populate_obj(record)
+
             record.created_at = arrow.now('Asia/Bangkok').datetime
             record.payment_datetime = arrow.now('Asia/Bangkok').datetime
             record.creator = current_user
             record.order = order
+
             db.session.add(record)
             db.session.commit()
 
-            send_receipts_with_payment_post(order_id)
 
             flash('Payment record has been saved.', 'success')
         else:
@@ -1214,6 +1123,14 @@ def edit_payment_record(order_id):
         resp.headers['HX-Refresh'] = 'true'
         return resp
     return render_template('lab/modals/payment_form.html', form=form, order=order)
+
+@lab.route('/receipt/<int:order_id>/preview', methods=['GET', 'POST'])
+@login_required
+def receipt_view(order_id):
+    order = LabTestOrder.query.get(order_id)
+    record = order.payment
+    form = LabPaymentRecordForm(obj=record) if record else LabPaymentRecordForm()
+    return render_template('lab/modals/receipt_view.html', form=form, order=order)
 
 
 @lab.route('/reports/<int:order_id>/preview', methods=['GET', 'POST'])
