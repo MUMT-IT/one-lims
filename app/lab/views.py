@@ -37,6 +37,7 @@ from ..auth.models import UserCheckinRecord
 from dotenv import load_dotenv
 import requests
 import json
+import os
 
 load_dotenv()
 
@@ -53,26 +54,17 @@ from openapi_client.rest import ApiException
 from pprint import pprint
 
 configuration = openapi_client.Configuration(
-    host="https://openapi.flowaccount.com/v1"
+    host=os.getenv('FA_URL')
 )
 
 def get_access_token():
-    """
-    Request access token from FlowAccount API using credentials from .env file.
-    """
+
     url = f"{configuration.host}/token?Content-Type=application/x-www-form-urlencoded"
 
-    # ดึงค่าจาก .env
-
-    client_id="onelabclinic-production-client"
-    client_secret="b25lbGFiY2xpbmljLXByb2R1Y3Rpb24tY2xpZW50LTIyLzAxLzIwMjU="
-    grant_type="client_credentials"
-    scope="flowaccount-api"
-    # ตรวจสอบว่าข้อมูลสำคัญมีครบ
-    if not all([client_id, client_secret, grant_type, scope]):
-        raise ValueError("Missing required environment variables for FlowAccount API")
-
-    # เตรียม payload
+    client_id = os.getenv('FA_CLIENT_ID')
+    client_secret = os.getenv('FA_CLIENT_SECRET')
+    grant_type = os.getenv('FA_GRANT_TYPE')
+    scope = os.getenv('FA_SCOPE')
     payload = (
         f"client_id={client_id}&"
         f"client_secret={client_secret}&"
@@ -82,10 +74,7 @@ def get_access_token():
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
     }
-
-    # ส่งคำขอเพื่อรับ access token
     response = requests.post(url, headers=headers, data=payload)
-
     if response.status_code == 200:
         token_data = response.json()
         return token_data["access_token"]
@@ -100,7 +89,7 @@ def create_invoice(order_id):
     access_token = f"Bearer {get_access_token()}"
     print(f'{access_token}')
 
-    # รับข้อมูลจากฟอร์ม
+
 
     payload = {
         "contactCode": request.form.get("contactCode"),
