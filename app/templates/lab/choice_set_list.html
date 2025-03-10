@@ -82,6 +82,7 @@
                             <td>
                                 <a hx-confirm="Are you sure?"
                                    hx-target="closest tr"
+                                   hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
                                    hx-delete="{{ url_for('lab.remove_choice_item', lab_id=lab.id, choice_set_id=cs.id, choice_item_id=ci.id) }}">
                                     <span class="icon">
                                         <i class="fas fa-trash"></i>

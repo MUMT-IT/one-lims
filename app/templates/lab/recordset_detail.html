@@ -50,10 +50,10 @@
                         <th>Test Name</th>
                         <th>Profile</th>
                         <th>Package</th>
+                        <th>Received At</th>
+                        <th>Status</th>
                         <th>Updated At</th>
                         <th>Result</th>
-                        <th>Status</th>
-                        <th>Received At</th>
                         <th>Actions</th>
                         <th>Price</th>
                         <th>Audit Trail</th>
@@ -75,13 +75,25 @@
                             <td>
                                 {% if rec.package %}
                                     <span class="tag is-medium is-warning">
-                                        {{ rec.package }}
+                                        {{ rec.package.code }}
                                     </span>
                                 {% endif %}
                             </td>
                             <td>
+                                {{ rec.received_at|localdatetime }}
+                            </td>
+                            <td>
+                            <span class="icon">
+                            {% if rec.reject_record or rec.cancelled or rec.order.cancelled_at %}
+                                <i class="fas fa-minus-circle has-text-danger"></i>
+                            {% else %}
+                                <i class="fas fa-check-circle has-text-success"></i>
+                            {% endif %}
+                            </span>
+                            </td>
+                            <td>
                                 {% if rec.updated_at %}
-                                {{ rec.updated_at|localdatetime }} {{ rec.updater }}
+                                {{ rec.updated_at|localdatetime }}
                                 {% endif %}
                             </td>
                             <td>
@@ -101,18 +113,6 @@
                                     <i class="fas fa-hourglass-half has-text-light"></i>
                                 </span>
                                 {% endif %}
-                            </td>
-                            <td>
-                                <span class="icon">
-                                {% if rec.reject_record or rec.cancelled or rec.order.cancelled_at %}
-                                    <i class="fas fa-minus-circle has-text-danger"></i>
-                                {% else %}
-                                    <i class="fas fa-check-circle has-text-success"></i>
-                                {% endif %}
-                                </span>
-                            </td>
-                            <td>
-                                {{ rec.received_at|localdatetime }}
                             </td>
                             <td>
                                 {% if rec.reject_record %}
@@ -157,6 +157,7 @@
                                     {% if not order.approved_at %}
                                     <div class="control">
                                         <a hx-post="{{ url_for('lab.cancel_test_record', record_id=rec.id) }}"
+                                           hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
                                            hx-confirm="Are you sure want to cancel?"
                                            class="button is-small is-rounded is-danger is-outlined">
                                             <span class="icon">
@@ -185,6 +186,7 @@
                         </tbody>
                     </table>
                     <div class="buttons is-centered">
+                        {% if not order.cancelled_at %}
                         <a class="button is-success is-outlined is-rounded"
                            hx-post="{{ url_for('lab.receive_all_tests', order_id=order.id) }}"
                            hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
@@ -197,6 +199,7 @@
                         </span>
                             <span>Accept All</span>
                         </a>
+                        {% endif %}
                     </div>
                     <table class="table">
                     <tbody>
@@ -242,6 +245,7 @@
             {% endif %}
             {% if not order.approved_at and not order.cancelled_at %}
                 <a hx-delete="{{ url_for('lab.add_test_order', lab_id=order.lab_id, order_id=order.id, customer_id=order.customer_id) }}"
+                   hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
                    hx-confirm="Are you sure want to cancel this order?"
                    class="button is-rounded is-danger">
                     <span class="icon"><i class="fas fa-times"></i></span>

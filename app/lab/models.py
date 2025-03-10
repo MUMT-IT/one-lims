@@ -241,6 +241,7 @@ class LabTestProfile(db.Model):
     __tablename__ = 'lab_test_profiles'
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     name = db.Column('name', db.String(), nullable=False, info={'label': 'Name'})
+    code = db.Column('code', db.String(), nullable=True, info={'label': 'Code'})
     detail = db.Column('detail', db.Text(), info={'label': 'Detail'})
     lab_id = db.Column('lab_id', db.ForeignKey('labs.id'))
     lab = db.relationship(Laboratory, backref=db.backref('test_profiles', cascade='all, delete-orphan'))
@@ -253,7 +254,7 @@ class LabTestProfile(db.Model):
 
     @property
     def tests_list(self):
-        return ', '.join([t.code for t in self.tests])
+        return ','.join([t.code for t in self.tests])
 
     @property
     def price(self):

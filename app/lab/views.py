@@ -543,8 +543,8 @@ def add_test_order(lab_id, customer_id, order_id=None):
                 for pp in package.profiles:
                     order.test_records = order.test_records.all()\
                                          + [LabTestRecord(test_id=test.id, profile_id=pp.id, package_id=package_id)
-                                            for test in profile.tests if test.id not in selected_test_ids]
-                    selected_test_ids.update([t.id for t in profile.tests])
+                                            for test in pp.tests if test.id not in selected_test_ids]
+                    selected_test_ids.update([t.id for t in pp.tests])
             flash('New order has been added.', 'success')
         else:
             # TODO: refactor this part for better performance
@@ -1371,23 +1371,25 @@ def add_test_profile(lab_id, profile_id=None):
         profile = LabTestProfile.query.get(profile_id)
         form = TestProfileForm(obj=profile)
     if form.validate_on_submit():
+        if not form.test_order.data:
+            form.test_order.data = ','.join([t.code for t in form.tests.data])
         if not profile_id:
-            profile = LabTestProfile(lab_id=lab_id)
-        form.populate_obj(profile)
-        db.session.add(profile)
-        db.session.commit()
-        if not profile_id:
-            flash('New test profile has been added.', 'success')
+            existing_profile = LabTestProfile.query.filter_by(lab_id=lab_id, code=form.code.data).first()
+            if not existing_profile:
+                profile = LabTestProfile(lab_id=lab_id)
+                flash('New test profile has been added.', 'success')
+            else:
+                profile = None
+                flash('The profile code already exists.', 'danger')
         else:
-            flash('The test profile has been updated.', 'success')
+            flash('The profile has been updated.', 'success')
 
-        # handle boosted request
-        if request.headers.get('HX-Request') == 'true':
-            resp = make_response()
-            resp.headers['HX-Redirect'] = url_for('lab.test_profiles', lab_id=lab_id)
-            return resp
-        else:
+        if profile:
+            form.populate_obj(profile)
+            db.session.add(profile)
+            db.session.commit()
             return redirect(url_for('lab.test_profiles', lab_id=lab_id))
+
     return render_template('lab/test_profile_form.html', form=form, lab_id=lab_id)
 
 
