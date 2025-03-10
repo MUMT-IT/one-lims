@@ -1,6 +1,7 @@
 import random
 import textwrap
 
+import psycopg2
 import pytz
 from bahttext import bahttext
 from barcode import EAN13
@@ -1471,13 +1472,21 @@ def edit_service_package(lab_id=None, package_id=None):
         if form.validate_on_submit():
             if not package_id:
                 package = LabServicePackage(lab_id=lab_id)
+                flash('The new package has been added.', 'success')
+            else:
+                flash('The package has been updated.', 'success')
+
             form.populate_obj(package)
             package.creator = current_user
             package.created_at = arrow.now('Asia/Bangkok').datetime
-            db.session.add(package)
-            db.session.commit()
-            flash('เพิ่มรายการตรวจแบบชุดเรียบร้อย', 'success')
-            return redirect(url_for('lab.list_service_packages', lab_id=lab_id))
+            try:
+                db.session.add(package)
+                db.session.commit()
+            except db.exc.IntegrityError as e:
+                db.session.rollback()
+                flash('The package code already exists.', 'danger')
+            else:
+                return redirect(url_for('lab.list_service_packages', lab_id=lab_id))
         else:
             flash(form.errors, 'danger')
     return render_template('lab/service_package_form.html', form=form, lab_id=lab_id)

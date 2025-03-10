@@ -40,7 +40,7 @@
                             <td>{{ p.name }}</td>
                             <td>{{ p.detail }}</td>
                             <td>{{ p.price }}</td>
-                            <td>{{ p.created_at|humanizedt }}</td>
+                            <td>{{ p.created_at|localdatetime }}</td>
                             <td>
                                 <a class="button is-rounded" href="{{ url_for('lab.edit_service_package', package_id=p.id, lab_id=lab.id) }}">
                                     <span class="icon">

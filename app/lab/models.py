@@ -544,9 +544,12 @@ class LabOrderPaymentRecord(db.Model):
 
 class LabServicePackage(db.Model):
     __tablename__ = 'lab_service_packages'
+    __table_args__ = (
+        db.UniqueConstraint('lab_id', 'code'),
+    )
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     name = db.Column('name', db.String(), nullable=False, info={'label': 'ชื่อ'})
-    code = db.Column('code', db.String(), unique=True, info={'label': 'รหัส'})
+    code = db.Column('code', db.String(), info={'label': 'รหัส'})
     detail = db.Column('detail', db.Text(), info={'label': 'รายละเอียด'})
     created_at = db.Column('created_at', db.DateTime(timezone=True), nullable=False)
     updated_at = db.Column('updated_at', db.DateTime(timezone=True), nullable=True)
