@@ -10,12 +10,18 @@
         </div>
         <div class="columns">
             <div class="column">
-                <form method="post" hx-boost="true" hx-indicator="#submitBtn">
+                <form method="post">
                     {{ form.hidden_tag() }}
                     <div class="field">
                         <label class="label">{{ form.name.label }}</label>
                         <div class="control">
                             {{ form.name(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.code.label }}</label>
+                        <div class="control">
+                            {{ form.code(class="input") }}
                         </div>
                     </div>
                     <div class="field">
@@ -40,7 +46,7 @@
                         <label class="label">{{ form.test_order.label }}</label>
                         <div class="control">
                             {{ form.test_order(class="textarea") }}
-                            <p class="help">A comma separated list of test codes</p>
+                            <p class="help is-danger">A comma separated list of test codes such as GLU,CHOL,TG. No spaces are allowed between items.</p>
                         </div>
                     </div>
                     <div class="field">
