@@ -1,6 +1,7 @@
 import random
 import textwrap
 
+import psycopg2
 import pytz
 from bahttext import bahttext
 from barcode import EAN13
@@ -1374,21 +1375,22 @@ def add_test_profile(lab_id, profile_id=None):
         if not form.test_order.data:
             form.test_order.data = ','.join([t.code for t in form.tests.data])
         if not profile_id:
-            existing_profile = LabTestProfile.query.filter_by(lab_id=lab_id, code=form.code.data).first()
-            if not existing_profile:
-                profile = LabTestProfile(lab_id=lab_id)
-                flash('New test profile has been added.', 'success')
-            else:
-                profile = None
-                flash('The profile code already exists.', 'danger')
-        else:
-            flash('The profile has been updated.', 'success')
+            profile = LabTestProfile(lab_id=lab_id)
 
         if profile:
             form.populate_obj(profile)
-            db.session.add(profile)
-            db.session.commit()
-            return redirect(url_for('lab.test_profiles', lab_id=lab_id))
+            try:
+                db.session.add(profile)
+                db.session.commit()
+            except db.exc.IntegrityError as e:
+                db.session.rollback()
+                flash('The profile code already exists.', 'danger')
+            else:
+                if profile_id:
+                    flash('The test profile has been updated.', 'success')
+                else:
+                    flash('New test profile has been added.', 'success')
+                return redirect(url_for('lab.test_profiles', lab_id=lab_id))
 
     return render_template('lab/test_profile_form.html', form=form, lab_id=lab_id)
 
@@ -1471,13 +1473,22 @@ def edit_service_package(lab_id=None, package_id=None):
         if form.validate_on_submit():
             if not package_id:
                 package = LabServicePackage(lab_id=lab_id)
+
             form.populate_obj(package)
             package.creator = current_user
             package.created_at = arrow.now('Asia/Bangkok').datetime
-            db.session.add(package)
-            db.session.commit()
-            flash('เพิ่มรายการตรวจแบบชุดเรียบร้อย', 'success')
-            return redirect(url_for('lab.list_service_packages', lab_id=lab_id))
+            try:
+                db.session.add(package)
+                db.session.commit()
+            except db.exc.IntegrityError as e:
+                db.session.rollback()
+                flash('The package code already exists.', 'danger')
+            else:
+                if package_id:
+                    flash('The package has been updated.', 'success')
+                else:
+                    flash('The new package has been added.', 'success')
+                return redirect(url_for('lab.list_service_packages', lab_id=lab_id))
         else:
             flash(form.errors, 'danger')
     return render_template('lab/service_package_form.html', form=form, lab_id=lab_id)
