@@ -239,6 +239,9 @@ class LabSpecimenContainer(db.Model):
 
 class LabTestProfile(db.Model):
     __tablename__ = 'lab_test_profiles'
+    __table_args__ = (
+        db.UniqueConstraint('lab_id', 'code'),
+    )
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     name = db.Column('name', db.String(), nullable=False, info={'label': 'Name'})
     code = db.Column('code', db.String(), nullable=True, info={'label': 'Code'})
