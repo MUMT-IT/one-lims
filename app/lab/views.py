@@ -1473,9 +1473,6 @@ def edit_service_package(lab_id=None, package_id=None):
         if form.validate_on_submit():
             if not package_id:
                 package = LabServicePackage(lab_id=lab_id)
-                flash('The new package has been added.', 'success')
-            else:
-                flash('The package has been updated.', 'success')
 
             form.populate_obj(package)
             package.creator = current_user
@@ -1487,6 +1484,10 @@ def edit_service_package(lab_id=None, package_id=None):
                 db.session.rollback()
                 flash('The package code already exists.', 'danger')
             else:
+                if package_id:
+                    flash('The package has been updated.', 'success')
+                else:
+                    flash('The new package has been added.', 'success')
                 return redirect(url_for('lab.list_service_packages', lab_id=lab_id))
         else:
             flash(form.errors, 'danger')
