@@ -44,6 +44,14 @@
                             </div>
                         </div>
                     </article>
+                    <div id="itemList">
+                    <div class="tabs is-centered is-boxed">
+                        <ul>
+                            <li class="is-active"><a>Tests</a></li>
+                            <li><a hx-target="#itemList" hx-swap="innerHTML"
+                                   hx-get="{{ url_for('lab.show_invoice_items', order_id=order.id) }}">Invoice</a></li>
+                        </ul>
+                    </div>
                     <table class="table is-striped is-fullwidth">
                         <thead>
                         <th>Order ID</th>
@@ -187,19 +195,20 @@
                     </table>
                     <div class="buttons is-centered">
                         {% if not order.cancelled_at %}
-                        <a class="button is-success is-outlined is-rounded"
-                           hx-post="{{ url_for('lab.receive_all_tests', order_id=order.id) }}"
-                           hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
-                           hx-indicator="this"
-                           hx-swap="none"
-                           hx-confirm="คุณต้องการรับทุกรายการหรือไม่"
-                        >
-                        <span class="icon">
-                            <i class="fas fa-check"></i>
-                        </span>
+                            <a class="button is-success is-outlined is-rounded"
+                               hx-post="{{ url_for('lab.receive_all_tests', order_id=order.id) }}"
+                               hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
+                               hx-indicator="this"
+                               hx-swap="none"
+                               hx-confirm="คุณต้องการรับทุกรายการหรือไม่"
+                            >
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
                             <span>Accept All</span>
-                        </a>
+                            </a>
                         {% endif %}
+                    </div>
                     </div>
                     <table class="table">
                     <tbody>
