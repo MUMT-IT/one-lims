@@ -1046,20 +1046,20 @@ def edit_payment_record(order_id):
             record.order = order
 
 
-            items = []
-            # for item in order.test_records:
-            #     items.append({
-            #         "type": 1,
-            #         "productCode": item.test.code,
-            #         "name": item.test.name,
-            #         "description": "",
-            #         "quantity": 1,
-            #         "unitName": "Unit",
-            #         "pricePerUnit": str(item.test.price),
-            #         "total": str(item.test.price)
-            #     })
-            for item in order.invoice_items:
-                items.append(item)
+            # items = []
+            # # for item in order.test_records:
+            # #     items.append({
+            # #         "type": 1,
+            # #         "productCode": item.test.code,
+            # #         "name": item.test.name,
+            # #         "description": "",
+            # #         "quantity": 1,
+            # #         "unitName": "Unit",
+            # #         "pricePerUnit": str(item.test.price),
+            # #         "total": str(item.test.price)
+            # #     })
+            # for item in order.invoice_items:
+            #     items.append(item)
 
 
             invoice = {
@@ -1082,7 +1082,7 @@ def edit_payment_record(order_id):
                 "discountPercentage": 0,
                 "discountAmount": 0,
                 "salesName": record.creator.firstname,
-                "items": items,
+                "items": order.invoice_items,
                 "subTotal": str(record.payment_amount),
                 "totalAfterDiscount": str(record.payment_amount),
                 "grandTotal": str(record.payment_amount),
