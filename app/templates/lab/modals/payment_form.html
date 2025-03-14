@@ -1,3 +1,5 @@
+
+
 <div class="modal is-active animate__animated" id="clo-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -24,6 +26,12 @@
                         {{ form.payment_amount(class="input") }}
                     </div>
                 </div>
+                 <div class="field">
+                    <label class="label">{{ form.payment_remarks.label }}</label>
+                    <div class="control">
+                        {{ form.payment_remarks(class="textarea") }}
+                    </div>
+                </div>
                 <div class="buttons">
                     <button class="button is-light" id="cancel-btn">Cancel</button>
                     <button class="button is-success" id="save-btn">Save</button>
@@ -32,6 +40,24 @@
         </form>
     </div>
 </div>
+
+<style>
+    .modal-content {
+    width: 90vw;
+    height: 90vh;
+    max-width: 900%;
+    max-height: 900%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#modal-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+</style>
 <script>
     window.document.getElementById("cancel-btn").addEventListener("click", function (event) {
         event.preventDefault()
