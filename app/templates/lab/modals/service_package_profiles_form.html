@@ -1,0 +1,36 @@
+<div class="modal is-active animate__animated" id="service-package-tests-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Service Tests Form</p>
+            <button type="button" id="cancelButton" class="delete" aria-label="close"></button>
+        </header>
+        <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_profiles_service_package', package_id=package.id) }}">
+            {{ form.hidden_tag() }}
+            <section class="modal-card-body">
+                <div class="field">
+                    <label class="label">{{ form.profiles.label }}</label>
+                    <div>
+                        {{ form.profiles() }}
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="button is-light" id="cancel-btn">Cancel</button>
+                    <button type="submit" class="button is-success" id="save-btn">Save</button>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+<script>
+    window.document.getElementById("cancel-btn").addEventListener("click", function (event) {
+        event.preventDefault()
+        htmx.removeClass(htmx.find('#service-package-tests-modal'), 'is-active')
+    })
+    window.document.getElementById("cancelButton").addEventListener("click", function () {
+        htmx.removeClass(htmx.find('#service-package-tests-modal'), 'is-active')
+    })
+    window.addEventListener('closeModal', (evt) => {
+        htmx.removeClass(htmx.find('#service-package-tests-modal'), 'is-active')
+    })
+</script>

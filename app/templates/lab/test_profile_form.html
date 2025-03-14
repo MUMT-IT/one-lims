@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                {% include "messages.html" %}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="field">
+                        <label class="label">{{ form.name.label }}</label>
+                        <div class="control">
+                            {{ form.name(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.code.label }}</label>
+                        <div class="control">
+                            {{ form.code(class="input") }}
+                            <p class="help is-danger">ต้องไม่ซ้ำกับ profile ที่มีอยู่แล้ว</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.detail.label }}</label>
+                        <div class="control">
+                            {{ form.detail(class="textarea") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="checkbox">
+                            {{ form.active() }}
+                            {{ form.active.label }}
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.tests.label }}</label>
+                        <div class="control">
+                            {{ form.tests() }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.test_order.label }}</label>
+                        <div class="control">
+                            {{ form.test_order(class="textarea") }}
+                            <p class="help is-danger">A comma separated list of test codes such as GLU,CHOL,TG. No spaces are allowed between items.</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <input type="submit" value="Submit" class="button is-success" id="submitBtn">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="buttons is-centered">
+            <a href="{{ url_for('lab.landing', lab_id=lab_id) }}"
+                class="button is-light is-rounded">
+                <span class="icon">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                <span>Back</span>
+            </a>
+        </div>
+    </div>
+    </section>
+{% endblock %}

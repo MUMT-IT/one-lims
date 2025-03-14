@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                {% include "messages.html" %}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column is-half is-offset-3">
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="field">
+                        <label class="label">{{ form.name.label }}</label>
+                        <div class="control">
+                            {{ form.name(class="input is-danger") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.code.label }}</label>
+                        <div class="control">
+                            {{ form.code(class="input is-danger") }}
+                            <p class="help is-danger">รหัสต้องไม่ซ้ำกัน</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.detail.label }}</label>
+                        <div class="control">
+                            {{ form.detail(class="textarea") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.price.label }}</label>
+                        <div class="control">
+                            {{ form.price(class="input") }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">{{ form.expired_at.label }}</label>
+                        <div class="control">
+                            {{ form.expired_at(class="input", type="text") }}
+                        </div>
+                    </div>
+                    <div class="field is-grouped is-grouped-centered">
+                        <div class="control">
+                            <a href="{{ url_for('lab.landing', lab_id=lab_id) }}"
+                               class="button is-light is-rounded">
+                                <span>Cancel</span>
+                            </a>
+                        </div>
+                        <div class="control">
+                            <input type="submit" value="Submit" class="button is-rounded is-success">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    </section>
+{% endblock %}

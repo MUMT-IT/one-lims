@@ -1,6 +1,7 @@
 import random
 import textwrap
 
+import psycopg2
 import pytz
 from bahttext import bahttext
 from barcode import EAN13
@@ -19,12 +20,11 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, TableStyle, Table, KeepTogether, Spacer
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 
 from . import lab_blueprint as lab
 from .forms import *
@@ -158,14 +158,14 @@ def add_choice_item(lab_id, choice_set_id, choice_item_id=None):
             form.populate_obj(item)
             item.choice_set_id = choice_set_id
             db.session.add(item)
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added result choice item',
-                detail=item.result,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=lab_id,
+            #     actor=current_user,
+            #     message='Added result choice item',
+            #     detail=item.result,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
+            # db.session.add(activity)
             db.session.commit()
             flash('New choice has been added.', 'success')
         else:
@@ -203,14 +203,14 @@ def add_choice_set(lab_id, choice_set_id=None):
             form.populate_obj(choice_set)
             choice_set.lab_id = lab_id
             db.session.add(choice_set)
-            activity = LabActivity(
-                lab_id=lab_id,
-                message='Added a new choice set',
-                detail=choice_set.name,
-                added_at=arrow.now('Asia/Bangkok').datetime,
-                actor=current_user
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=lab_id,
+            #     message='Added a new choice set',
+            #     detail=choice_set.name,
+            #     added_at=arrow.now('Asia/Bangkok').datetime,
+            #     actor=current_user
+            # )
+            # db.session.add(activity)
             db.session.commit()
             flash('New choice set has been added.', 'success')
         else:
@@ -235,6 +235,7 @@ def remove_choice_set(lab_id, choice_set_id):
 @lab.route('/<int:lab_id>/quantests/add', methods=['GET', 'POST'])
 @login_required
 def add_test(lab_id):
+    LabTestForm = create_lab_test_form(lab_id)
     form = LabTestForm(lab_id=lab_id)
     form.choice_set.query = LabResultChoiceSet.query.filter_by(lab_id=lab_id)
     if request.method == 'POST':
@@ -244,26 +245,19 @@ def add_test(lab_id):
             new_test.lab_id = lab_id
             new_test.added_at = arrow.now('Asia/Bangkok').datetime
             db.session.add(new_test)
-            activity = LabActivity(
-                lab_id=lab_id,
-                actor=current_user,
-                message='Added a new quantitative test',
-                detail=form.name.data,
-                added_at=arrow.now('Asia/Bangkok').datetime,
-            )
-            db.session.add(activity)
             db.session.commit()
             flash('New quantative test has been added.')
             return redirect(url_for('lab.list_tests', lab_id=lab_id))
         else:
             flash(form.errors, 'danger')
-    return render_template('lab/new_test.html', form=form)
+    return render_template('lab/new_test.html', form=form, lab_id=lab_id)
 
 
 @lab.route('/<int:lab_id>/quantests/<int:test_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_test(lab_id, test_id):
     test = LabTest.query.get(test_id)
+    LabTestForm = create_lab_test_form(lab_id)
     form = LabTestForm(obj=test)
     form.choice_set.query = LabResultChoiceSet.query.filter_by(lab_id=lab_id)
     if request.method == 'POST':
@@ -303,11 +297,13 @@ def edit_physical_exam_record(order_id):
     return render_template('lab/modals/physical_exam_form.html', form=form, order=order)
 
 
+@lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
 @lab.route('/tests/<int:test_id>/specimens/container-items/<int:container_item_id>/edit',
            methods=['GET', 'DELETE', 'PUT'])
-@lab.route('/tests/<int:test_id>/specimens/container-items', methods=['GET', 'POST'])
 @login_required
 def edit_specimen_container_item(test_id, container_item_id=None):
+    test = LabTest.query.get(test_id)
+    LabSpecimenContainerItemForm = create_lab_specimen_container_item_form(test.lab_id)
     if container_item_id:
         container_item = LabSpecimenContainerItem.query.get(container_item_id)
         form = LabSpecimenContainerItemForm(obj=container_item)
@@ -319,25 +315,71 @@ def edit_specimen_container_item(test_id, container_item_id=None):
             if not container_item_id:
                 _item = LabSpecimenContainerItem()
                 form.populate_obj(_item)
-                _item.lab_id = session.get('lab_id')
+                _item.lab_id = test.lab_id
                 _item.lab_test_id = test_id
                 db.session.add(_item)
                 db.session.commit()
-                template = f'''
-                <tr>
-                <td>{_item.specimen_container}</td>
-                <td>{_item.volume}</td>
-                <td>{_item.note}</td>
-                </tr>
-                '''
-                resp = make_response(template)
-                resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+                # template = f'''
+                # <tr id="container-item-{_item.id}">
+                # <td>{_item.specimen_container}</td>
+                # <td>{_item.volume}</td>
+                # <td>{_item.note}</td>
+                # <td>
+                #     <a hx-get="{ url_for('lab.edit_specimen_container_item', test_id=_item.lab_test_id, container_item_id=_item.id) }"
+                #        hx-target="#specimenContainerModal"
+                #        hx-swap="innerHTML"
+                #     >
+                #     <span class="icon">
+                #         <i class="fas fa-pencil-alt"></i>
+                #     </span>
+                #     </a>
+                # </td>
+                # </tr>
+                # '''
+                resp = make_response()
+                resp.headers['HX-Refresh'] = 'true'
                 return resp
+        else:
+            print(form.errors)
+    if request.method == 'DELETE':
+        db.session.delete(container_item)
+        db.session.commit()
+        resp = make_response()
+        resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+        return resp
+    if request.method == 'PUT':
+        if form.validate_on_submit():
+            form.populate_obj(container_item)
+            db.session.add(container_item)
+            db.session.commit()
+            template = f'''
+                    <tr id="container-item-{container_item.id}">
+                    <td>{container_item.specimen_container}</td>
+                    <td>{container_item.volume}</td>
+                    <td>{container_item.note}</td>
+                    <td>
+                        <a hx-get="{url_for('lab.edit_specimen_container_item', test_id=container_item.lab_test_id, container_item_id=container_item.id)}"
+                           hx-target="#specimenContainerModal"
+                           hx-swap="innerHTML"
+                        >
+                        <span class="icon">
+                            <i class="fas fa-pencil-alt"></i>
+                        </span>
+                        </a>
+                    </td>
+                    </tr>
+                    '''
+            resp = make_response(template)
+            resp.headers['HX-Trigger-After-Swap'] = 'closeModal'
+            return resp
+        else:
+            print(form.errors)
 
     return render_template('lab/modals/specimen_container.html',
                            form=form,
                            test_id=test_id,
-                           container_item_id=container_item_id)
+                           container_item_id=container_item_id,
+                           target=f'#container-item-{container_item_id}')
 
 
 @lab.route('/<int:lab_id>/quantests/<int:test_id>/remove', methods=['GET', 'POST'])
@@ -477,14 +519,14 @@ def add_random_patients(lab_id):
                 title=title,
                 lab=lab
             )
-        activity = LabActivity(
-            lab_id=lab_id,
-            actor=current_user,
-            message='Added random customers',
-            detail=customer_.fullname,
-            added_at=arrow.now('Asia/Bangkok').datetime
-        )
-        db.session.add(activity)
+        # activity = LabActivity(
+        #     lab_id=lab_id,
+        #     actor=current_user,
+        #     message='Added random customers',
+        #     detail=customer_.fullname,
+        #     added_at=arrow.now('Asia/Bangkok').datetime
+        # )
+        # db.session.add(activity)
         db.session.commit()
         flash('New random customers have been added.', 'success')
         resp = make_response()
@@ -497,6 +539,7 @@ def add_random_patients(lab_id):
 @login_required
 def add_test_order(lab_id, customer_id, order_id=None):
     lab = Laboratory.query.get(lab_id)
+    referrer = request.args.get('back')
     selected_test_ids = []
     selected_profile_ids = []
     order = None
@@ -509,15 +552,15 @@ def add_test_order(lab_id, customer_id, order_id=None):
         for rec in order.test_records:
             rec.cancelled = True
             db.session.add(rec)
-        activity = LabActivity(
-            lab_id=lab_id,
-            actor=current_user,
-            message='Cancelled an order.',
-            detail=order.id,
-            added_at=arrow.now('Asia/Bangkok').datetime
-        )
+        # activity = LabActivity(
+        #     lab_id=lab_id,
+        #     actor=current_user,
+        #     message='Cancelled an order.',
+        #     detail=order.id,
+        #     added_at=arrow.now('Asia/Bangkok').datetime
+        # )
         db.session.add(order)
-        db.session.add(activity)
+        # db.session.add(activity)
         db.session.commit()
         resp = make_response()
         resp.headers['HX-Refresh'] = 'true'
@@ -526,6 +569,8 @@ def add_test_order(lab_id, customer_id, order_id=None):
         form = request.form
         test_ids = [int(_id) for _id in form.getlist('test_ids')]
         profile_ids = [int(_id) for _id in form.getlist('profile_ids')]
+        package_ids = [int(_id) for _id in form.getlist('package_ids')]
+        selected_test_ids = set(test_ids)
         if not order_id:
             order = LabTestOrder(
                 lab_id=lab_id,
@@ -538,7 +583,18 @@ def add_test_order(lab_id, customer_id, order_id=None):
             for profile_id in profile_ids:
                 profile = LabTestProfile.query.get(profile_id)
                 order.test_records = order.test_records.all() + [LabTestRecord(test_id=test.id, profile_id=profile_id)
-                                                                 for test in profile.tests]
+                                                                 for test in profile.tests if test.id not in selected_test_ids]
+                selected_test_ids.update([t.id for t in profile.tests])
+            for package_id in package_ids:
+                package = LabServicePackage.query.get(package_id)
+                order.test_records = order.test_records.all() + [LabTestRecord(test_id=t.id, package_id=package.id)
+                                                                 for t in package.tests if t.id not in selected_test_ids]
+                selected_test_ids.update([t.id for t in package.tests])
+                for pp in package.profiles:
+                    order.test_records = order.test_records.all()\
+                                         + [LabTestRecord(test_id=test.id, profile_id=pp.id, package_id=package_id)
+                                            for test in pp.tests if test.id not in selected_test_ids]
+                    selected_test_ids.update([t.id for t in pp.tests])
             flash('New order has been added.', 'success')
         else:
             # TODO: refactor this part for better performance
@@ -568,6 +624,7 @@ def add_test_order(lab_id, customer_id, order_id=None):
         return redirect(url_for('lab.show_customer_test_records',
                                 customer_id=customer_id, order_id=order.id))
     return render_template('lab/new_test_order.html',
+                           referrer=referrer,
                            lab=lab,
                            order=order,
                            customer_id=customer_id,
@@ -596,7 +653,19 @@ def print_order_barcode(order_id):
         _text = f'{code} {order.ordered_at.strftime("%m/%d/%Y")}'
         EAN13(code, writer=SVGWriter()).write(rv, {'module_height': 8.0, 'module_width': 0.3}, text=_text)
         barcodes.append((order, rv.getvalue().decode('utf-8')))
-    return render_template('lab/order_barcode.html', barcodes=barcodes, order=order)
+
+    docdef = {
+        'pageSize': {'width': 200, 'height': 200},
+        'pageMargins': [0, 0, 0, 0],
+        'pageOrientation': 'portrait',
+        'content': [
+            {'text': 'HN09099900'},
+            {'text': 'Jane Doe'},
+            {'text': '2/12/2024 10:34:45'}
+        ]
+    }
+    return render_template('lab/order_barcode.html',
+                           barcodes=barcodes, order=order, docdef=docdef)
 
 
 @lab.route('/<int:lab_id>/patients/<int:customer_id>/auto-orders', methods=['POST'])
@@ -665,16 +734,16 @@ def auto_add_test_order(lab_id, customer_id):
             approved_at=approve_datetime.datetime,
             approver=approver.user,
         )
-        activity = LabActivity(
-            lab_id=lab_id,
-            actor=current_user,
-            message='Added an order.',
-            detail=order.id,
-            added_at=arrow.now('Asia/Bangkok').datetime
-        )
+        # activity = LabActivity(
+        #     lab_id=lab_id,
+        #     actor=current_user,
+        #     message='Added an order.',
+        #     detail=order.id,
+        #     added_at=arrow.now('Asia/Bangkok').datetime
+        # )
         flash('New order has been added automatically.', 'success')
         db.session.add(order)
-        db.session.add(activity)
+        # db.session.add(activity)
         db.session.commit()
         resp = make_response()
         resp.headers['HX-Refresh'] = 'true'
@@ -692,15 +761,15 @@ def list_test_orders(lab_id):
 @login_required
 def cancel_test_record(record_id):
     record = LabTestRecord.query.get(record_id)
-    activity = LabActivity(
-        lab_id=record.order.lab_id,
-        actor=current_user,
-        message='Cancelled the test order.',
-        detail=record.id,
-        added_at=arrow.now('Asia/Bangkok').datetime
-    )
+    # activity = LabActivity(
+    #     lab_id=record.order.lab_id,
+    #     actor=current_user,
+    #     message='Cancelled the test order.',
+    #     detail=record.id,
+    #     added_at=arrow.now('Asia/Bangkok').datetime
+    # )
     record.cancelled = True
-    db.session.add(activity)
+    # db.session.add(activity)
     db.session.commit()
     flash('The test has been cancelled.', 'success')
 
@@ -725,14 +794,14 @@ def reject_test_order(record_id):
             record.cancelled = True
             db.session.add(record)
             db.session.add(new_record)
-            activity = LabActivity(
-                lab_id=record.order.lab_id,
-                actor=current_user,
-                message='Rejected and cancelled the test order.',
-                detail=record.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=record.order.lab_id,
+            #     actor=current_user,
+            #     message='Rejected and cancelled the test order.',
+            #     detail=record.id,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
+            # db.session.add(activity)
             db.session.commit()
             flash('The test has been rejected.', 'success')
             return redirect(url_for('lab.show_customer_test_records', customer_id=record.order.customer.id,
@@ -749,18 +818,33 @@ def receive_test_order(record_id):
     record.received_at = arrow.now('Asia/Bangkok').datetime
     record.receiver = current_user
     db.session.add(record)
-    activity = LabActivity(
-        lab_id=record.order.lab_id,
-        actor=current_user,
-        message='Received the test.',
-        detail=record.id,
-        added_at=arrow.now('Asia/Bangkok').datetime
-    )
-    db.session.add(activity)
+    # activity = LabActivity(
+    #     lab_id=record.order.lab_id,
+    #     actor=current_user,
+    #     message='Received the test.',
+    #     detail=record.id,
+    #     added_at=arrow.now('Asia/Bangkok').datetime
+    # )
+    # db.session.add(activity)
     db.session.commit()
     flash('The order has been received.', 'success')
     return redirect(url_for('lab.show_customer_test_records',
                             order_id=record.order_id, customer_id=record.order.customer.id))
+
+
+@lab.route('/orders/<int:order_id>/receive/all', methods=['POST'])
+@login_required
+def receive_all_tests(order_id):
+    order = LabTestOrder.query.get(order_id)
+    for record in order.test_records:
+        record.received_at = arrow.now('Asia/Bangkok').datetime
+        record.receiver = current_user
+        db.session.add(record)
+    db.session.commit()
+    flash('The records has been received.', 'success')
+    resp = make_response()
+    resp.headers['HX-Refresh'] = 'true'
+    return resp
 
 
 @lab.route('/<int:lab_id>/orders/pending', methods=['GET', 'POST'])
@@ -821,16 +905,16 @@ def finish_test_record(order_id, record_id):
             rec.updater = current_user
             if form.choice_set.data:
                 rec.text_result = form.choice_set.data.result
-            activity = LabActivity(
-                lab_id=order.lab_id,
-                actor=current_user,
-                message='Added the result for a test record.',
-                detail=rec.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
+            # activity = LabActivity(
+            #     lab_id=order.lab_id,
+            #     actor=current_user,
+            #     message='Added the result for a test record.',
+            #     detail=rec.id,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
             order.finished_at = arrow.now('Asia/Bangkok').datetime
             db.session.add(rec)
-            db.session.add(activity)
+            # db.session.add(activity)
             db.session.commit()
             flash('New result record has been saved.', 'success')
             return redirect(url_for('lab.show_customer_test_records', order_id=order_id, customer_id=order.customer.id))
@@ -847,14 +931,14 @@ def approve_test_order(order_id):
         if order.approved_at:
             order.approved_at = None
             order.approver = None
-            activity = LabActivity(
-                lab_id=order.lab_id,
-                actor=current_user,
-                message='Cancelled the approval for an order',
-                detail=order.id,
-                added_at=arrow.now('Asia/Bangkok').datetime
-            )
-            db.session.add(activity)
+            # activity = LabActivity(
+            #     lab_id=order.lab_id,
+            #     actor=current_user,
+            #     message='Cancelled the approval for an order',
+            #     detail=order.id,
+            #     added_at=arrow.now('Asia/Bangkok').datetime
+            # )
+            # db.session.add(activity)
     else:
         order.approved_at = arrow.now('Asia/Bangkok').datetime
         order.approver = current_user
@@ -1078,6 +1162,13 @@ def receipt_view(order_id):
 def preview_report(order_id):
     order = LabTestOrder.query.get(order_id)
     return render_template('lab/lab_report_preview.html', order=order)
+
+
+@lab.route('/reports/<int:order_id>/print', methods=['GET', 'POST'])
+@login_required
+def print_report(order_id):
+    order = LabTestOrder.query.get(order_id)
+    return render_template('lab/lab_report_print.html', order=order)
 
 
 @lab.route('/requests/<int:order_id>/preview', methods=['GET', 'POST'])
@@ -1426,3 +1517,230 @@ def geo_checkin(lab_id):
                             'time': now.isoformat(),
                             })
     return render_template('lab/geo_checkin.html', lab=lab)
+
+
+@lab.route('/labs/<int:lab_id>/test-profiles', methods=['GET', 'POST'])
+@login_required
+def test_profiles(lab_id):
+    profiles = LabTestProfile.query.filter_by(lab_id=lab_id, active=True)
+    return render_template('lab/test_profiles.html', test_profiles=profiles, lab_id=lab_id)
+
+
+@lab.route('/labs/<int:lab_id>/add-test-profile', methods=['GET', 'POST'])
+@lab.route('/labs/<int:lab_id>/profiles/<int:profile_id>', methods=['GET', 'POST'])
+@login_required
+def add_test_profile(lab_id, profile_id=None):
+    TestProfileForm = create_lab_test_profile_form(lab_id)
+    if not profile_id:
+        form = TestProfileForm()
+    else:
+        profile = LabTestProfile.query.get(profile_id)
+        form = TestProfileForm(obj=profile)
+    if form.validate_on_submit():
+        if not form.test_order.data:
+            form.test_order.data = ','.join([t.code for t in form.tests.data])
+        if not profile_id:
+            profile = LabTestProfile(lab_id=lab_id)
+
+        if profile:
+            form.populate_obj(profile)
+            try:
+                db.session.add(profile)
+                db.session.commit()
+            except db.exc.IntegrityError as e:
+                db.session.rollback()
+                flash('The profile code already exists.', 'danger')
+            else:
+                if profile_id:
+                    flash('The test profile has been updated.', 'success')
+                else:
+                    flash('New test profile has been added.', 'success')
+                return redirect(url_for('lab.test_profiles', lab_id=lab_id))
+
+    return render_template('lab/test_profile_form.html', form=form, lab_id=lab_id)
+
+
+@lab.route('/orders/<int:order_id>/profiles/<int:profile_id>/test-records', methods=['GET', 'POST'])
+@login_required
+def edit_test_profile_record(order_id, profile_id):
+    order = LabTestOrder.query.get(order_id)
+    profile = LabTestProfile.query.get(profile_id)
+    LabTestProfileRecordForm = create_lab_test_profile_record_form(profile.test_order)
+    code_names = profile.test_order.split(',')
+    form = LabTestProfileRecordForm()
+    if request.method == 'GET':
+        for field in form:
+            if field.name not in code_names:
+                continue
+            test = LabTest.query.filter_by(code=field.name).first()
+            _record = LabTestRecord.query.filter_by(test_id=test.id,
+                                                    order_id=order_id,
+                                                    profile_id=profile_id).first()
+            if _record:
+                if _record.test.choice_set:
+                    for c in _record.test.choice_set.choice_items:
+                        if c.result == _record.text_result:
+                            field.choice_set.data = c
+                    field.text_result.data = ""
+                else:
+                    field.text_result.data = _record.text_result
+                field.num_result.data = _record.num_result
+                field.comment.data = _record.comment
+
+    if form.validate_on_submit():
+        for field in form:
+            if field.name not in code_names:
+                continue
+            test = LabTest.query.filter_by(code=field.name).first()
+            _record = LabTestRecord.query.filter_by(test_id=test.id,
+                                                    order_id=order_id,
+                                                    profile_id=profile_id).first()
+            if not _record:
+                _record = LabTestRecord(order=order_id, profile_id=profile_id, test_id=test.id)
+
+            print(field.name, field.numeric.data)
+
+            if field.numeric.data:
+                _record.num_result = field.num_result.data
+            else:
+                if field.choice_set.data:
+                    _record.text_result = field.choice_set.data.result
+                else:
+                    _record.text_result = field.text_result.data
+            _record.comment = field.comment.data
+            _record.updated_at = arrow.now('Asia/Bangkok').datetime
+            _record.updater = current_user
+            db.session.add(_record)
+        db.session.commit()
+        flash("Results have been saved.", "success")
+        return redirect(url_for('lab.show_customer_test_records', order_id=order_id))
+    return render_template('lab/test_profile_record_form.html',
+                           form=form, order=order, profile=profile, code_names=code_names)
+
+
+@lab.route('/lab/<int:lab_id>/packages', methods=['GET', 'POST'])
+@login_required
+def list_service_packages(lab_id):
+    lab = Laboratory.query.get(lab_id)
+    return render_template('lab/service_package_list.html', lab=lab)
+
+
+@lab.route('/lab/<int:lab_id>/package-form', methods=['GET', 'POST'])
+@lab.route('/lab/<int:lab_id>/packages/<int:package_id>', methods=['GET', 'POST'])
+@login_required
+def edit_service_package(lab_id=None, package_id=None):
+    if package_id:
+        package = LabServicePackage.query.get(package_id)
+        form = LabServicePackageForm(obj=package)
+    else:
+        form = LabServicePackageForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if not package_id:
+                package = LabServicePackage(lab_id=lab_id)
+
+            form.populate_obj(package)
+            package.creator = current_user
+            package.created_at = arrow.now('Asia/Bangkok').datetime
+            try:
+                db.session.add(package)
+                db.session.commit()
+            except db.exc.IntegrityError as e:
+                db.session.rollback()
+                flash('The package code already exists.', 'danger')
+            else:
+                if package_id:
+                    flash('The package has been updated.', 'success')
+                else:
+                    flash('The new package has been added.', 'success')
+                return redirect(url_for('lab.list_service_packages', lab_id=lab_id))
+        else:
+            flash(form.errors, 'danger')
+    return render_template('lab/service_package_form.html', form=form, lab_id=lab_id)
+
+
+@lab.route('/packages/<int:package_id>/items', methods=['GET', 'POST'])
+@login_required
+def manage_service_package_items(package_id):
+    package = LabServicePackage.query.get(package_id)
+    return render_template('lab/service_package_items.html', package=package)
+
+
+@lab.route('/packages/<int:package_id>/tests', methods=['GET', 'POST'])
+@login_required
+def edit_tests_service_package(package_id=None):
+    package = LabServicePackage.query.get(package_id)
+    LabServicePackageTestsForm = create_lab_service_package_tests_form(package.lab_id)
+    form = LabServicePackageTestsForm(obj=package)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            form.populate_obj(package)
+            package.updated_at = arrow.now('Asia/Bangkok').datetime
+            db.session.add(package)
+            db.session.commit()
+            flash('The package has been updated.', 'success')
+            resp = make_response()
+            resp.headers['HX-Refresh'] = 'true'
+            return resp
+        else:
+            print(form.errors)
+            resp = make_response()
+            resp.headers['HX-Trigger'] = 'closeModal'
+            return resp
+    return render_template('lab/modals/service_package_tests_form.html', form=form, package=package)
+
+
+@lab.route('/packages/<int:package_id>/profiles', methods=['GET', 'POST'])
+@login_required
+def edit_profiles_service_package(package_id=None):
+    package = LabServicePackage.query.get(package_id)
+    LabServicePackageProfilesForm = create_lab_service_package_profiles_form(package.lab_id)
+    form = LabServicePackageProfilesForm(obj=package)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            form.populate_obj(package)
+            package.updated_at = arrow.now('Asia/Bangkok').datetime
+            db.session.add(package)
+            db.session.commit()
+            flash('The package has been updated.', 'success')
+            resp = make_response()
+            resp.headers['HX-Refresh'] = 'true'
+            return resp
+        else:
+            print(form.errors)
+            resp = make_response()
+            resp.headers['HX-Trigger'] = 'closeModal'
+            return resp
+    return render_template('lab/modals/service_package_profiles_form.html', form=form, package=package)
+
+
+@lab.route('/api/customers/search')
+def search_customers():
+    query = request.args.get('query')
+    customers = []
+    if query:
+        try:
+            firstname, lastname = query.split(' ')
+        except ValueError:
+            customers += LabCustomer.query.filter(or_(
+                LabCustomer.firstname.like(f"%{query}%"),
+                LabCustomer.lastname.like(f"%{query}%"),
+                LabCustomer.hn.like(f"%{query}"),
+            )).all()
+        else:
+            customers += LabCustomer.query.filter(and_(
+                LabCustomer.firstname.like(f'%{firstname}%'),
+                LabCustomer.lastname.like(f'%{lastname}%')
+            )).all()
+    template = ''
+    for customer in customers:
+        url = url_for('lab.show_customer_records', customer_id=customer.id)
+        template += f'<tr><td>{customer.hn}</td><td>{customer.firstname} {customer.lastname}</td><td><a href="{url}" class="button is-rounded is-info"><span class="icon"><i class="fas fa-info-circle"></i></span><span>Info</span></a></td>'
+
+    return template
+
+
+@lab.route('/api/packages/<int:package_id>/info')
+def show_package_info(package_id: int):
+    package = LabServicePackage.query.get(package_id)
+    return render_template('lab/modals/package_info.html', package=package)

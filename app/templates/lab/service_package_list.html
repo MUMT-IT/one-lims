@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section class="section">
+    <div class="container">
+        <div class="tabs is-centered is-boxed">
+            <ul>
+                <li><a>Tests</a></li>
+                <li><a href="{{ url_for('lab.test_profiles', lab_id=lab.id) }}">Profiles</a></li>
+                <li class="is-active"><a href="{{ url_for('lab.list_service_packages', lab_id=lab.id) }}">Service Packages</a></li>
+                <li><a href="{{ url_for('lab.list_choice_sets', lab_id=lab.id) }}">Result Choice Sets</a></li>
+            </ul>
+        </div>
+        <div class="columns">
+            <div class="column">
+            {% include "messages.html" %}
+            <div>
+                <div class="buttons is-right">
+                    <a class="button is-success is-rounded"
+                       href="{{ url_for('lab.edit_service_package', lab_id=lab.id) }}">
+                        <span class="icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </span>
+                        <span>Add Package</span>
+                    </a>
+                </div>
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Added at</th>
+                    <th></th>
+                    </thead>
+                    <tbody>
+                    {% for p in lab.service_packages %}
+                        <tr>
+                            <td>{{ p.code }}</td>
+                            <td>{{ p.name }}</td>
+                            <td>{{ p.detail }}</td>
+                            <td>{{ p.price }}</td>
+                            <td>{{ p.created_at|localdatetime }}</td>
+                            <td>
+                                <a class="button is-rounded" href="{{ url_for('lab.edit_service_package', package_id=p.id, lab_id=lab.id) }}">
+                                    <span class="icon">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </span>
+                                    <span>Edit</span>
+                                </a>
+                                <a class="button is-rounded" href="{{ url_for('lab.manage_service_package_items', package_id=p.id) }}">
+                                    <span class="icon">
+                                        <i class="fas fa-box-open"></i>
+                                    </span>
+                                    <span>Items</span>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+        <div class="buttons is-centered">
+            <a href="{{ url_for('lab.landing', lab_id=lab.id) }}"
+                class="button is-light is-rounded">
+                <span class="icon">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                <span>Back</span>
+            </a>
+        </div>
+    </div>
+    </section>
+{% endblock %}

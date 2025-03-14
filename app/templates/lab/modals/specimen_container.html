@@ -1,15 +1,17 @@
-<div class="modal is-active animate__animated" id="clo-modal">
+<div class="modal is-active animate__animated" id="a-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
             <p class="modal-card-title">Specimen</p>
             <button type="button" id="cancelButton" class="delete" aria-label="close"></button>
         </header>
-        <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_specimen_container_item', test_id=test_id, container_item_id=container_item_id) }}"
+        <form hx-indicator="#save-btn"
               {% if not container_item_id %}
+                  hx-post="{{ url_for('lab.edit_specimen_container_item', test_id=test_id) }}"
                   hx-target="#specimenContainerTable" hx-swap="beforeend"
               {% else %}
-                hx-target="closest tr" hx-swap="outerHTML"
+                  hx-put="{{ url_for('lab.edit_specimen_container_item', test_id=test_id, container_item_id=container_item_id) }}"
+                  hx-target="{{ target }}" hx-swap="outerHTML"
               {% endif %}
         >
             {{ form.hidden_tag() }}
@@ -34,6 +36,9 @@
                 </div>
                 <div class="buttons">
                     <button class="button is-light" id="cancel-btn">Cancel</button>
+                    {% if container_item_id %}
+                    <button class="button is-danger" hx-delete="{{ url_for('lab.edit_specimen_container_item', test_id=test_id, container_item_id=container_item_id) }}" hx-confirm="Are you sure?">Remove</button>
+                    {% endif %}
                     <button class="button is-success" id="save-btn">Save</button>
                 </div>
             </section>
@@ -43,12 +48,12 @@
 <script>
     window.document.getElementById("cancel-btn").addEventListener("click", function (event) {
         event.preventDefault()
-        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+        htmx.removeClass(htmx.find('#a-modal'), 'is-active')
     })
     window.document.getElementById("cancelButton").addEventListener("click", function () {
-        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+        htmx.removeClass(htmx.find('#a-modal'), 'is-active')
     })
     window.addEventListener('closeModal', (evt) => {
-        htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
+        htmx.removeClass(htmx.find('#a-modal'), 'is-active')
     })
 </script>

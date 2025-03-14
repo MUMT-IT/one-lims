@@ -31,10 +31,11 @@ Mako==1.1.2
 MarkupSafe==2.1.3
 numpy==1.26.1
 openpyxl==3.1.2
+packaging==24.2
 pandas==2.1.2
 pillow==10.4.0
 pip==23.3.1
-psycopg2==2.8.4
+psycopg2-binary==2.9.10
 python-barcode==0.15.1
 python-dateutil==2.8.2
 python-dotenv==0.12.0
@@ -43,7 +44,7 @@ pytz==2023.3.post1
 reportlab==4.2.4
 requests==2.23.0
 setuptools==68.2.2
-six==1.14.0
+six==1.17.0
 SQLAlchemy==1.4.46
 SQLAlchemy-Continuum==1.4.0
 SQLAlchemy-Utils==0.39.0
@@ -52,6 +53,7 @@ typing_extensions==4.8.0
 tzdata==2023.3
 urllib3==1.25.8
 validators==0.14.2
+webencodings==0.5.1
 Werkzeug==2.2.3
 wheel==0.41.2
 WTForms==2.3.3
