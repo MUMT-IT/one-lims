@@ -406,18 +406,19 @@ class LabTestOrder(db.Model):
         packages = set()
         items = []
         for rec in self.active_test_records:
-            if rec.package and rec.package.code not in packages:
-                items.append({
-                    "type": 1,
-                    "productCode": rec.package.code,
-                    "name": rec.package.name,
-                    "description": "",
-                    "quantity": 1,
-                    "unitName": "Unit",
-                    "pricePerUnit": str(rec.package.price),
-                    "total": str(rec.package.price)
-                })
-                packages.add(rec.package.code)
+            if rec.package:
+                if rec.package.code not in packages:
+                    items.append({
+                        "type": 1,
+                        "productCode": rec.package.code,
+                        "name": rec.package.name,
+                        "description": "",
+                        "quantity": 1,
+                        "unitName": "Unit",
+                        "pricePerUnit": str(rec.package.price),
+                        "total": str(rec.package.price)
+                    })
+                    packages.add(rec.package.code)
             else:
                 items.append({
                     "type": 1,
@@ -437,9 +438,10 @@ class LabTestOrder(db.Model):
         test_prices = Decimal(0.0)
         package_prices = Decimal(0.0)
         for rec in self.active_test_records:
-            if rec.package and rec.package.code not in packages:
-                packages.add(rec.package.code)
-                package_prices += rec.package.price
+            if rec.package:
+                if rec.package.code not in packages:
+                    packages.add(rec.package.code)
+                    package_prices += rec.package.price
             else:
                 test_prices += rec.test.price
         return test_prices + package_prices
