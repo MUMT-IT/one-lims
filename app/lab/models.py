@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy_continuum import make_versioned
 import sqlalchemy as sa
@@ -401,8 +402,49 @@ class LabTestOrder(db.Model):
         return self.payments.filter_by(expired_at=None).first()
 
     @property
+    def invoice_items(self):
+        packages = set()
+        items = []
+        for rec in self.active_test_records:
+            if rec.package:
+                if rec.package.code not in packages:
+                    items.append({
+                        "type": 1,
+                        "productCode": rec.package.code,
+                        "name": rec.package.name,
+                        "description": "",
+                        "quantity": 1,
+                        "unitName": "Unit",
+                        "pricePerUnit": str(rec.package.price),
+                        "total": str(rec.package.price)
+                    })
+                    packages.add(rec.package.code)
+            else:
+                items.append({
+                    "type": 1,
+                    "productCode": rec.test.code,
+                    "name": rec.test.name,
+                    "description": "",
+                    "quantity": 1,
+                    "unitName": "Unit",
+                    "pricePerUnit": str(rec.test.price),
+                    "total": str(rec.test.price)
+                })
+        return items
+
+    @property
     def amount_balance(self):
-        return sum([rec.test.price for rec in self.active_test_records])
+        packages = set()
+        test_prices = Decimal(0.0)
+        package_prices = Decimal(0.0)
+        for rec in self.active_test_records:
+            if rec.package:
+                if rec.package.code not in packages:
+                    packages.add(rec.package.code)
+                    package_prices += rec.package.price
+            else:
+                test_prices += rec.test.price
+        return test_prices + package_prices
 
     @property
     def last_reported_record(self):

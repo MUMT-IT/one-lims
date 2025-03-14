@@ -883,7 +883,16 @@ def show_customer_profile(lab_id, customer_id):
 def show_customer_test_records(order_id):
     order = LabTestOrder.query.get(order_id)
     customer = order.customer
+    if request.headers.get('HX-Request') == 'true':
+        return render_template('lab/partials/customer_test_records.html', order=order)
     return render_template('lab/recordset_detail.html', customer=customer, order=order)
+
+
+@lab.route('/orders/<int:order_id>/invoice-items')
+@login_required
+def show_invoice_items(order_id):
+    order = LabTestOrder.query.get(order_id)
+    return render_template('lab/partials/invoice_items.html', order=order)
 
 
 @lab.route('/orders/<int:order_id>/records/<int:record_id>', methods=['POST', 'GET'])

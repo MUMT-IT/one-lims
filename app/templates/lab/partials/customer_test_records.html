@@ -1,0 +1,164 @@
+<div class="tabs is-centered is-boxed">
+    <ul>
+        <li class="is-active"><a>Tests</a></li>
+        <li><a hx-target="#itemList" hx-swap="innerHTML"
+               hx-get="{{ url_for('lab.show_invoice_items', order_id=order.id) }}">Invoice</a></li>
+    </ul>
+</div>
+<table class="table is-striped is-fullwidth">
+    <thead>
+    <th>Order ID</th>
+    <th>Test Name</th>
+    <th>Profile</th>
+    <th>Package</th>
+    <th>Received At</th>
+    <th>Status</th>
+    <th>Updated At</th>
+    <th>Result</th>
+    <th>Actions</th>
+    <th>Price</th>
+    <th>Audit Trail</th>
+    </thead>
+    <tbody>
+    {% for rec in order.test_records %}
+        <tr>
+            <td>
+                <span>{{ order.code }}</span>
+            </td>
+            <td>{{ rec.test.name }}</td>
+            <td>
+                {% if rec.profile %}
+                    <a class="tag is-medium is-info" href="{{ url_for('lab.edit_test_profile_record', profile_id=rec.profile.id, order_id=rec.order_id) }}">
+                        {{ rec.profile }}
+                    </a>
+                {% endif %}
+            </td>
+            <td>
+                {% if rec.package %}
+                    <span class="tag is-medium is-warning">
+                                        {{ rec.package.code }}
+                                    </span>
+                {% endif %}
+            </td>
+            <td>
+                {{ rec.received_at|localdatetime }}
+            </td>
+            <td>
+                            <span class="icon">
+                            {% if rec.reject_record or rec.cancelled or rec.order.cancelled_at %}
+                                <i class="fas fa-minus-circle has-text-danger"></i>
+                            {% else %}
+                                <i class="fas fa-check-circle has-text-success"></i>
+                            {% endif %}
+                            </span>
+            </td>
+            <td>
+                {% if rec.updated_at %}
+                    {{ rec.updated_at|localdatetime }}
+                {% endif %}
+            </td>
+            <td>
+                {% if rec.num_result %}
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <div class="tags has-addons">
+                                <span class="tag is-success">{{ rec.num_result }}</span>
+                                <span class="tag is-dark">{{ rec.test.unit }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% elif rec.text_result %}
+                    {{ rec.text_result}}
+                {% else %}
+                    <span class="icon">
+                                    <i class="fas fa-hourglass-half has-text-light"></i>
+                                </span>
+                {% endif %}
+            </td>
+            <td>
+                {% if rec.reject_record %}
+                    <span class="tag is-danger">rejected</span>
+                {% endif %}
+                {% if rec.is_active %}
+                    <div class="field has-addons">
+                        {% if not rec.received_at %}
+                            <div class="control">
+                                <a href="{{ url_for('lab.receive_test_order', record_id=rec.id) }}"
+                                   class="button is-small is-rounded is-success is-outlined">
+                                                <span class="icon">
+                                                    <i class="fas fa-check"></i>
+                                                </span>
+                                    <span>
+                                                    accept
+                                                </span>
+                                </a>
+                            </div>
+                            <div class="control">
+                                <a href="{{ url_for('lab.reject_test_order', record_id=rec.id) }}"
+                                   class="button is-small is-rounded is-warning is-outlined">
+                                                <span class="icon">
+                                                    <i class="fas fa-times"></i>
+                                                </span>
+                                    <span>
+                                                    reject
+                                                </span>
+                                </a>
+                            </div>
+                        {% else %}
+                            {% if not order.approved_at %}
+                                <div class="control">
+                                    <a href="{{ url_for('lab.finish_test_record', record_id=rec.id, order_id=rec.order_id) }}"
+                                       class="button is-outlined is-small is-rounded is-link">
+                                        <span class="icon"><i class="fas fa-pencil-alt"></i></span>
+                                        <span>result</span>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                        {% if not order.approved_at %}
+                            <div class="control">
+                                <a hx-post="{{ url_for('lab.cancel_test_record', record_id=rec.id) }}"
+                                   hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
+                                   hx-confirm="Are you sure want to cancel?"
+                                   class="button is-small is-rounded is-danger is-outlined">
+                                            <span class="icon">
+                                                <i class="fas fa-times"></i>
+                                            </span>
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </td>
+            <td>
+                {{ rec.test.price }}
+            </td>
+            <td>
+                <a class="button is-small is-rounded is-link"
+                   href="{{ url_for('lab.test_record_revisions', record_id=rec.id) }}">
+                                    <span class="icon">
+                                        <i class="fas fa-history"></i>
+                                    </span>
+                    <span>view</span>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<div class="buttons is-centered">
+    {% if not order.cancelled_at %}
+        <a class="button is-success is-outlined is-rounded"
+           hx-post="{{ url_for('lab.receive_all_tests', order_id=order.id) }}"
+           hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
+           hx-indicator="this"
+           hx-swap="none"
+           hx-confirm="คุณต้องการรับทุกรายการหรือไม่"
+        >
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+            <span>Accept All</span>
+        </a>
+    {% endif %}
+</div>
