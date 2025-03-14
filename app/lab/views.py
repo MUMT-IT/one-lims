@@ -1047,17 +1047,20 @@ def edit_payment_record(order_id):
 
 
             items = []
-            for item in order.test_records:
-                items.append({
-                    "type": 1,
-                    "productCode": item.test.code,
-                    "name": item.test.name,
-                    "description": "",
-                    "quantity": 1,
-                    "unitName": "Unit",
-                    "pricePerUnit": str(item.test.price),
-                    "total": str(item.test.price)
-                })
+            # for item in order.test_records:
+            #     items.append({
+            #         "type": 1,
+            #         "productCode": item.test.code,
+            #         "name": item.test.name,
+            #         "description": "",
+            #         "quantity": 1,
+            #         "unitName": "Unit",
+            #         "pricePerUnit": str(item.test.price),
+            #         "total": str(item.test.price)
+            #     })
+            for item in order.invoice_items:
+                items.append(item)
+
 
             invoice = {
                 "contactCode": record.order.customer.hn,
@@ -1085,7 +1088,7 @@ def edit_payment_record(order_id):
                 "grandTotal": str(record.payment_amount),
                 "totalWithoutVat": 0,
                 "vatAmount": 0,
-                "remarks": "",
+                "remarks": request.form.get('payment_remarks'),
                 "internalNotes": "ชำระเงินแล้ว",
                 "paymentMethod": 1,
                 "paymentDate": arrow.now('Asia/Bangkok').format('YYYY-MM-DD'),

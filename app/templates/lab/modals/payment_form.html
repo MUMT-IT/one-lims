@@ -26,6 +26,12 @@
                         {{ form.payment_amount(class="input") }}
                     </div>
                 </div>
+                 <div class="field">
+                    <label class="label">{{ form.payment_remarks.label }}</label>
+                    <div class="control">
+                        {{ form.payment_remarks(class="textarea") }}
+                    </div>
+                </div>
                 <div class="buttons">
                     <button class="button is-light" id="cancel-btn">Cancel</button>
                     <button class="button is-success" id="save-btn">Save</button>
