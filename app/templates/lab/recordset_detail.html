@@ -36,6 +36,9 @@
                                     <small>น้ำหนัก <strong>{{ order.physical_exam.weight or '-' }} กก.</strong> ส่วนสูง <strong>{{ order.physical_exam.height or '-' }} ซม.</strong></small>
                                     <small>ความดันโลหิต <strong>{{ order.physical_exam.systolic}}/{{ order.physical_exam.distolic }} mmHg</strong> อัตราการเต้นหัวใจ <strong>{{ order.physical_exam.heartrate or '-' }} ครั้ง/นาที</strong></small>
                                 </p>
+                                 <p>
+                                    <small>ที่อยู่ <strong>{{ order.customer.address }}</strong> </small>
+                                </p>
                                 <a class="button is-rounded" hx-get="{{ url_for('lab.edit_physical_exam_record', order_id=order.id) }}"
                                     hx-target="#physicalExamRecordModal" hx-swap="innerHTML">
                                     <span class="icon"><i class="fas fa-pencil-alt"></i></span>
@@ -72,7 +75,7 @@
                             <td>
                                 <span>{{ order.code }}</span>
                             </td>
-                            <td>{{ rec.test.name }}</td>
+                            <td>{{ rec.test.code }} {{ rec.test.name }}</td>
                             <td>
                                 {% if rec.profile %}
                                 <a class="tag is-medium is-info" href="{{ url_for('lab.edit_test_profile_record', profile_id=rec.profile.id, order_id=rec.order_id) }}">
@@ -284,6 +287,7 @@
                     </span>
                 <span>Pay</span>
             </a>
+
             <div id="paymentModal"></div>
             {% else %}
             <a href="{{ url_for('lab.preview_report', order_id=order.id) }}"
@@ -293,15 +297,74 @@
                 </span>
                 <span>Report</span>
             </a>
-            <a href="{{ url_for('lab.export_receipt_pdf', order_id=order.id) }}"
-               class="button is-rounded is-warning">
-                <span class="icon">
-                    <i class="fas fa-print"></i>
-                </span>
-                <span>Receipt</span>
-            </a>
+                <a href="{{ url_for('lab.receipt_view', order_id=order.id) }}"
+   class="button is-rounded is-success open-receipt">
+    <span class="icon">
+        <i class="fas fa-print"></i>
+    </span>
+    <span>Receipt</span>
+</a>
+
+
+
+
             {% endif %}
         </div>
     </div>
 </section>
+
+    <div class="modal" id="receipt-modal">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+        <iframe id="receipt-iframe" src=""></iframe>
+    </div>
+    <button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+<style>
+.modal-content {
+    width: 90vw;
+    height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#receipt-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+</style>
+
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+    const receiptModal = document.getElementById("receipt-modal");
+    const receiptIframe = document.getElementById("receipt-iframe");
+    const closeModal = document.querySelector("#receipt-modal .modal-close");
+
+    document.querySelectorAll(".open-receipt").forEach(button => {
+        button.addEventListener("click", function(event) {
+            event.preventDefault();
+
+            const url = this.getAttribute("href");
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        receiptIframe.src = data.link;
+                        receiptModal.classList.add("is-active");
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(err => alert("Fetch error: " + err));
+        });
+    });
+
+    closeModal.addEventListener("click", () => {
+        receiptModal.classList.remove("is-active");
+        receiptIframe.src = "";
+    });
+});
+</script>
 {% endblock %}

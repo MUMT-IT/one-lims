@@ -582,6 +582,7 @@ class LabOrderPaymentRecord(db.Model):
     payment_method = db.Column('payment_method', db.String(), info={'label': 'Payment Method',
                                                                     'choices': [(c, c) for c in
                                                                                 ('Cash', 'QR', 'Credit Card')]})
+    payment_remarks = db.Column('payment_remarks',db.Text(), info={'label': 'Payment Remarks'})
     order_id = db.Column('order_id', db.Integer, db.ForeignKey('lab_test_orders.id'))
     order = db.relationship(LabTestOrder, backref=db.backref('payments', lazy='dynamic', cascade='all, delete-orphan'))
     creator = db.relationship(User)

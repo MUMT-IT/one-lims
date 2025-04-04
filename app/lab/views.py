@@ -34,9 +34,58 @@ from collections import namedtuple, defaultdict
 
 from ..auth.models import UserCheckinRecord
 
+from dotenv import load_dotenv
+import requests
+import json
+import os
+
+load_dotenv()
+
+# Defining the host is optional and defaults to https://openapi.flowaccount.com/v1
+
+
+
 TestOrder = namedtuple('TestOrder', ['order', 'ordered_at', 'type', 'approved_at'])
 
 fake = Faker(['th-TH'])
+
+import openapi_client
+from openapi_client.rest import ApiException
+from pprint import pprint
+
+configuration = openapi_client.Configuration(
+    host=os.getenv('FA_URL')
+)
+
+def get_access_token():
+
+
+
+    url = f"{configuration.host}/token?Content-Type=application/x-www-form-urlencoded"
+
+    client_id = os.getenv('FA_CLIENT_ID')
+    client_secret = os.getenv('FA_CLIENT_SECRET')
+    grant_type = os.getenv('FA_GRANT_TYPE')
+    scope = os.getenv('FA_SCOPE')
+
+
+
+    payload = (
+        f"client_id={client_id}&"
+        f"client_secret={client_secret}&"
+        f"grant_type={grant_type}&"
+        f"scope={scope}"
+    )
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    response = requests.post(url, headers=headers, data=payload)
+    if response.status_code == 200:
+        token_data = response.json()
+        return token_data["access_token"]
+    else:
+        raise Exception(f"Failed to get access token: {response.text}")
+
 
 
 @lab.route('/<int:lab_id>')
@@ -978,19 +1027,105 @@ def edit_payment_record(order_id):
     order = LabTestOrder.query.get(order_id)
     record = order.payment
     form = LabPaymentRecordForm(obj=record) if record else LabPaymentRecordForm()
+
     if request.method == 'POST':
         if form.validate_on_submit():
             if order.payment:
                 record = order.payment
+                print("Load Payment Record")
+
             else:
                 record = LabOrderPaymentRecord()
+                print("Enter Payment Record")
+
             form.populate_obj(record)
+
             record.created_at = arrow.now('Asia/Bangkok').datetime
             record.payment_datetime = arrow.now('Asia/Bangkok').datetime
             record.creator = current_user
             record.order = order
+
+
+            # items = []
+            # # for item in order.test_records:
+            # #     items.append({
+            # #         "type": 1,
+            # #         "productCode": item.test.code,
+            # #         "name": item.test.name,
+            # #         "description": "",
+            # #         "quantity": 1,
+            # #         "unitName": "Unit",
+            # #         "pricePerUnit": str(item.test.price),
+            # #         "total": str(item.test.price)
+            # #     })
+            # for item in order.invoice_items:
+            #     items.append(item)
+
+
+            invoice = {
+                "contactCode": record.order.customer.hn,
+                "contactName": record.order.customer.fullname,
+                "contactAddress": record.order.customer.address,
+                "contactBranch": "000",
+                "contactPerson": "",
+                "contactEmail": "",
+                "contactNumber": record.order.customer.tel,
+                "contactTaxId": record.order.customer.pid,
+                "creditType": 3,
+                "publishedOn": arrow.now('Asia/Bangkok').format('YYYY-MM-DD'),
+                "creditDays": 0,
+                "dueDate": arrow.now('Asia/Bangkok').format('YYYY-MM-DD'),
+                "projectName": "One lab",
+                "reference": "Cash",
+                "isVatInclusive": False,
+                "discountType": 1,
+                "discountPercentage": 0,
+                "discountAmount": 0,
+                "salesName": record.creator.firstname,
+                "items": order.invoice_items,
+                "subTotal": str(record.payment_amount),
+                "totalAfterDiscount": str(record.payment_amount),
+                "grandTotal": str(record.payment_amount),
+                "totalWithoutVat": 0,
+                "vatAmount": 0,
+                "remarks": request.form.get('payment_remarks'),
+                "internalNotes": "ชำระเงินแล้ว",
+                "paymentMethod": 1,
+                "paymentDate": arrow.now('Asia/Bangkok').format('YYYY-MM-DD'),
+                "paymentRemarks": request.form.get('payment_method'),
+                "collected": request.form.get('payment_amount'),
+                "withheldAmount": 0,
+                "withheldPercent": 0,
+                "fee": 0
+            }
+
+
+            access_token = f"Bearer {get_access_token()}"
+
+            access_url = f"{configuration.host}/cash-invoices/with-payment"
+            headers = {
+                "Authorization": f"{access_token}",
+                "Content-Type": "application/json"
+            }
+
+            response = requests.post(access_url, headers=headers, data=json.dumps(invoice))
+
+            document_id = 0
+
+            if response.status_code == 200:
+                api_response = response.json()
+                print({"success": True, "data": api_response})
+                document_id = api_response['data']['documentId']
+                receipt_no = api_response['data']['documentSerial']
+
+
+            else:
+                print({"success": False, "error": response.text}, response.status_code)
+
+            record.receipt_id = document_id
             db.session.add(record)
             db.session.commit()
+
             flash('Payment record has been saved.', 'success')
         else:
             flash(f'An error occurred. {form.errors}', 'danger')
@@ -999,6 +1134,39 @@ def edit_payment_record(order_id):
         resp.headers['HX-Refresh'] = 'true'
         return resp
     return render_template('lab/modals/payment_form.html', form=form, order=order)
+
+
+
+
+@lab.route('/receipt/<int:order_id>/preview', methods=['GET', 'POST'])
+@login_required
+def receipt_view(order_id):
+    order = LabTestOrder.query.get(order_id)
+    record = order.payment
+
+
+    document = {
+         "documentId" : record.receipt_id
+    }
+
+    access_token = f"Bearer {get_access_token()}"
+
+    access_url = f"{configuration.host}/cash-invoices/sharedocument"
+    headers = {
+        "Authorization": f"{access_token}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(access_url, headers=headers, data=json.dumps(document))
+
+
+    if response.status_code == 200:
+        api_response = response.json()
+        link = api_response['data']['link']
+        return jsonify({"success": True, "link": link})
+    else:
+        return jsonify({"success": False, "error": response.text}), response.status_code
+
 
 
 @lab.route('/reports/<int:order_id>/preview', methods=['GET', 'POST'])
