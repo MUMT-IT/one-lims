@@ -4,6 +4,7 @@ bahttext==1.0.2
 blinker==1.6.3
 certifi==2019.11.28
 chardet==3.0.4
+charset-normalizer==3.4.1
 click==8.1.7
 decorator==4.4.2
 dnspython==2.4.2
@@ -43,7 +44,7 @@ python-dotenv==0.12.0
 python-editor==1.0.4
 pytz==2023.3.post1
 reportlab==4.2.4
-requests==2.23.0
+requests==2.32.3
 setuptools==68.2.2
 six==1.17.0
 SQLAlchemy==1.4.46
@@ -52,7 +53,7 @@ SQLAlchemy-Utils==0.39.0
 types-python-dateutil==2.8.19.14
 typing_extensions==4.8.0
 tzdata==2023.3
-urllib3==1.25.8
+urllib3==2.4.0
 validators==0.14.2
 webencodings==0.5.1
 Werkzeug==2.2.3
@@ -62,6 +63,3 @@ WTForms-Alchemy==0.18.0
 WTForms-Components==0.10.4
 XlsxWriter==3.1.9
 zipp==3.17.0
-pytest~=4.6.7 # needed for python 2.7+3.4
-pytest-cov>=2.8.1
-pytest-randomly==1.2.3 # needed for python 2.7+3.4
