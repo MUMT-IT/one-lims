@@ -1157,6 +1157,7 @@ def receipt_view(order_id):
         "Content-Type": "application/json"
     }
 
+
     response = requests.post(access_url, headers=headers, data=json.dumps(document))
 
 
