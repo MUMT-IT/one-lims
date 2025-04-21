@@ -68,6 +68,70 @@
                 });
             })
     </script>
+    <!-- Global Payment Modal Logic -->
+<script>
+    document.body.addEventListener("htmx:afterSwap", function (evt) {
+        if (evt.detail.target.id === "paymentModal") {
+            setupPaymentFormLogic();
+        }
+    });
+
+    function setupPaymentFormLogic() {
+        const amountBalance = parseFloat(document.querySelector("#amount-balance")?.value || 0);
+        const discountTypeInput = document.querySelector("#discount-type");
+        const discountAmountInput = document.querySelector("#discount-amount");
+        const grandTotalInput = document.querySelector("#grand-total");
+        const paymentAmountInput = document.querySelector("#payment-amount");
+        const saveButton = document.querySelector("#save-btn");
+        const warningText = document.querySelector("#payment-warning");
+
+        function calculateGrandTotal() {
+            const discountAmount = parseFloat(discountAmountInput?.value || 0);
+            const discountType = discountTypeInput?.value;
+
+            let grandTotal = amountBalance;
+
+            if (discountType === "1") {
+                grandTotal = amountBalance - (amountBalance * discountAmount / 100);
+            } else if (discountType === "3") {
+                grandTotal = amountBalance - discountAmount;
+            }
+
+            if (grandTotal < 0) grandTotal = 0;
+
+            if (grandTotalInput) grandTotalInput.value = grandTotal.toFixed(2);
+
+        }
+
+        function validatePayment() {
+            const grandTotal = parseFloat(grandTotalInput?.value || 0);
+            const paymentAmount = parseFloat(paymentAmountInput?.value || 0);
+
+            if (paymentAmount > grandTotal) {
+                saveButton.disabled = true;
+                warningText.style.display = "block";
+            } else {
+                saveButton.disabled = false;
+                warningText.style.display = "none";
+            }
+        }
+
+         [discountTypeInput, discountAmountInput].forEach(el => {
+            el.addEventListener("input", () => {
+                calculateGrandTotal();
+            });
+        });
+
+         [paymentAmountInput].forEach(el => {
+            el.addEventListener("input", () => {
+                validatePayment();
+            });
+        });
+
+        calculateGrandTotal();
+    }
+</script>
+
 {% endblock %}
 </body>
 </html>

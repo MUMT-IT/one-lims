@@ -579,6 +579,18 @@ class LabOrderPaymentRecord(db.Model):
     receipt_id = db.Column('receipt_id', db.String())
     payment_datetime = db.Column('payment_datetime', db.DateTime(timezone=True))
     payment_amount = db.Column('payment_amount', db.Numeric(), info={'label': 'Payment Amount'})
+    discount_type = db.Column(
+        'discount_type',
+        db.Integer,
+        nullable=True,
+        default=1,
+        info={
+            'label': 'Discount Type',
+            'choices': [(1, '%'), (3, 'จำนวนเงิน')]
+        }
+    )
+    discount_amount = db.Column('discount_amount', db.Numeric(), info={'label': 'Discount Amount'})
+    grand_total_amount = db.Column('grand_total_amount', db.Numeric(), info={'label': 'Grand Total'})
     payment_method = db.Column('payment_method', db.String(), info={'label': 'Payment Method',
                                                                     'choices': [(c, c) for c in
                                                                                 ('Cash', 'QR', 'Credit Card')]})
