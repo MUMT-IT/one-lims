@@ -1061,6 +1061,18 @@ def edit_payment_record(order_id):
             # for item in order.invoice_items:
             #     items.append(item)
 
+            discountPercentage: int = 0
+            discountAmount : float = 0.0
+
+            if record.discount_type == 1:
+                discountPercentage = record.discount_amount
+                discountAmount = (order.amount_balance - record.grand_total_amount)
+            elif record.discount_type == 3:
+                discountAmount = record.discount_amount
+            else:
+                discountAmount = 0.0
+                discountPercentage = 0
+
 
             invoice = {
                 "contactCode": record.order.customer.hn,
@@ -1078,13 +1090,13 @@ def edit_payment_record(order_id):
                 "projectName": "One lab",
                 "reference": "Cash",
                 "isVatInclusive": False,
-                "discountType": 1,
-                "discountPercentage": 0,
-                "discountAmount": 0,
+                "discountType": record.discount_type,
+                "discountPercentage": str(discountPercentage),
+                "discountAmount": str(discountAmount),
                 "salesName": record.creator.firstname,
                 "items": order.invoice_items,
-                "subTotal": str(record.payment_amount),
-                "totalAfterDiscount": str(record.payment_amount),
+                "subTotal": str(order.amount_balance),
+                "totalAfterDiscount": str(record.grand_total_amount),
                 "grandTotal": str(record.payment_amount),
                 "totalWithoutVat": 0,
                 "vatAmount": 0,
@@ -1099,7 +1111,7 @@ def edit_payment_record(order_id):
                 "fee": 0
             }
 
-
+            # print('data', invoice)
             access_token = f"Bearer {get_access_token()}"
 
             access_url = f"{configuration.host}/cash-invoices/with-payment"
