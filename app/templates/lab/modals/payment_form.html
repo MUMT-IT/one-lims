@@ -4,7 +4,7 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Physical Exam Record Form</p>
+            <p class="modal-card-title">Payment Record Form</p>
             <button type="button" id="cancelButton" class="delete" aria-label="close"></button>
         </header>
         <form hx-indicator="#save-btn" hx-post="{{ url_for('lab.edit_payment_record', order_id=order.id) }}">
@@ -18,12 +18,34 @@
                 </div>
                 <div class="field">
                     <label class="label">Amount Balance</label>
-                    <input class="input" type="input" value="{{ order.amount_balance }}" readonly>
+
+                    <input class="input" id="amount-balance" type="input" value="{{ order.amount_balance }}" readonly>
                 </div>
+
+
                 <div class="field">
+                    <label class="label">{{ form.discount_type.label }}</label>
+                    <div class="select">
+                          {{ form.discount_type(id="discount-type") }}
+                    </div>
+                </div>
+
+                <div class="field">
+                        <label class="label">{{ form.discount_amount.label }}</label>
+                        <div class="control">
+                            {{ form.discount_amount(class="input", id="discount-amount") }}
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Grand Total</label>
+                         <input class="input" type="number" id="grand-total" name="grand_total_amount" readonly value="0.00">
+
+                    </div>
+                  <div class="field">
                     <label class="label">{{ form.payment_amount.label }}</label>
                     <div class="control">
-                        {{ form.payment_amount(class="input") }}
+                         {{ form.payment_amount(class="input", id="payment-amount") }}
                     </div>
                 </div>
                  <div class="field">
@@ -31,6 +53,7 @@
                     <div class="control">
                         {{ form.payment_remarks(class="textarea") }}
                     </div>
+ <p class="help is-danger" id="payment-warning" style="display: none;">ยอดชำระเกินยอดสุทธิ</p>
                 </div>
                 <div class="buttons">
                     <button class="button is-light" id="cancel-btn">Cancel</button>
@@ -58,7 +81,9 @@
     border: none;
 }
 </style>
+
 <script>
+
     window.document.getElementById("cancel-btn").addEventListener("click", function (event) {
         event.preventDefault()
         htmx.removeClass(htmx.find('#clo-modal'), 'is-active')
